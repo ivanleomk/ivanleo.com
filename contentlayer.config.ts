@@ -71,7 +71,7 @@ const Post = defineDocumentType(() => ({
   },
 }));
 
-const themePath = "./assets/oneHunterTheme.json";
+const themePath = "./assets/OneHunterTheme.json";
 export default makeSource({
   contentDirPath: "posts",
   documentTypes: [Post],
