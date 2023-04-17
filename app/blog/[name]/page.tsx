@@ -9,6 +9,8 @@ import Callout from "@/app/components/Callout";
 import KommyImage from "@/app/components/KommyImage";
 import KommyLink from "@/app/components/KommyLink";
 import Pre from "@/app/components/Pre";
+import { getTweet } from "react-tweet/api";
+import Tweet from "@/app/components/Tweet";
 
 type Params = {
   name: string;
@@ -19,6 +21,7 @@ const CodeBlocks = {
   CodeTitle,
   KommyImage,
   KommyLink,
+
   a: ({ ...props }: React.HTMLAttributes<HTMLAnchorElement>) => (
     <a
       className="animated-underline border-b border-dotted border-dark hover:border-dark/0"
@@ -100,6 +103,11 @@ const BlogPage = async ({ params }: { params: Params }) => {
   const post = getPost(params);
   const Content = getMDXComponent(post.body.code);
 
+  const StaticTweet = ({ id }) => {
+    // Use the tweets map that is present in the outer scope to get the content associated with the id passed as prop
+    return <Tweet />;
+  };
+
   return (
     <div className="container relative py-6 lg:py-10">
       <Link className="flex items-center" href="/">
@@ -115,7 +123,7 @@ const BlogPage = async ({ params }: { params: Params }) => {
       </div>
       <hr className="my-8 border-slate-200 w-40 mx-auto" />
       <div className="prose">
-        <Content components={CodeBlocks} />
+        <Content components={{ ...CodeBlocks, StaticTweet }} />
       </div>
     </div>
   );

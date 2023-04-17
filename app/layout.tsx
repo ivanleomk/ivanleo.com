@@ -31,26 +31,25 @@ export default function RootLayout({
       <body className="">
         <header className="container mx-auto max-w-3xl">
           <div className="flex flex-col items-start sm:flex-row sm:items-center sm:justify-between border-b py-4 mx-4">
-            <a
-              href="https://twitter.com/ivanleomk"
-              target="_blank"
-              rel="noreferrer"
-              className="flex items-center space-x-2"
-            >
-              <div className="block h-10 w-10 overflow-hidden rounded-full">
-                <Image
-                  src="/ProfilePic.jpeg"
-                  alt="Logo"
-                  width={48}
-                  height={48}
-                />
-              </div>
-              <div className="flex flex-col space-y-1 text-sm leading-none">
+            <div className="block h-10 w-10 overflow-hidden rounded-full">
+              <Image src="/ProfilePic.jpeg" alt="Logo" width={48} height={48} />
+            </div>
+            <div className="flex flex-col space-y-1 text-sm leading-none">
+              <a
+                href="https://twitter.com/ivanleomk"
+                target="_blank"
+                rel="noreferrer"
+                className="flex items-center space-x-2"
+              >
                 <p className="font-bold">@ivanleomk</p>
-                <span>I write code sometimes</span>
-              </div>
-            </a>
+              </a>
+              <span>I write code sometimes</span>
+            </div>
+
             <div className="flex items-center space-x-4 cursor-pointer my-2 sm:my-0">
+              <Link href="/" className="text-sm hover:font-semibold">
+                Home
+              </Link>
               <Link href="/posts" className="text-sm hover:font-semibold">
                 Posts
               </Link>
