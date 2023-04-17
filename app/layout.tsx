@@ -2,7 +2,7 @@ import Image from "next/image";
 import "./globals.css";
 import Script from "next/script";
 import { envSchema } from "@/types/env";
-import { GoogleAnalytics } from "./components/Analytics";
+import { Analytics } from "@vercel/analytics/react";
 
 export const metadata = {
   title: "Create Next App",
@@ -23,8 +23,8 @@ export default function RootLayout({
   }
   return (
     <html lang="en">
+      <Analytics />
       <body className="mx-auto flex min-h-screen max-w-2xl flex-col">
-        <GoogleAnalytics />
         <header className="container">
           <div className="flex items-center justify-between border-b py-4">
             <a
