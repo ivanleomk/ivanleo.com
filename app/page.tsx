@@ -13,7 +13,7 @@ const posts = allPosts.sort((a, b) => {
 export default function Home() {
   return (
     <div>
-      <div className="my-10 prose">
+      <div className="my-10 ">
         <SectionHeader title="About Me" description="A lil bit about myself">
           <p className="text-sm leading-6">
             I&apos;m a software engineer based in Singapore, currently working

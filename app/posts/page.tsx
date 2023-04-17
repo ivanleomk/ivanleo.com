@@ -29,4 +29,10 @@ const PostPage = () => {
   );
 };
 
+export const Metadata = {
+  title: "All Posts",
+  description: "Read all posts written by Ivan Leo in chronological order",
+  author: "Ivan Leo",
+};
+
 export default PostPage;

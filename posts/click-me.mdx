@@ -7,4 +7,41 @@ categories:
 description: I've been working on a new website for a while now. Here's what I've learned.
 ---
 
-Blog posts have their own pages. The content source is a markdown file, parsed to HTML by Contentlayer.
+# Introduction
+
+I wanted to redesign my site because previous versions were very complex and I wanted to simplify it. I also wanted to try out some new libraries and frameworks.
+
+The code is entirely open-source and you can see it [here](https://github.com/ivanleomk/personal_website_v3)
+
+So without ado, let's see what are some of the new additions.
+
+## Content Layer
+
+> You can check out Content Layer [here](https://www.contentlayer.dev/)
+
+If I could sum up what I liked about content layer, it would be that it's a very simple way to create a CMS. It's also very flexible and you can use it with any framework.
+
+You simply declare a schema and point them to a content directory. They then parse it and give it to you in a typesafe manner which you can then query and use in your frontend.
+
+Here's an example of what it looks like when you declare a type to be parsed from your markdown code
+
+```ts
+title: {
+      type: "string",
+      description: "The title of the post",
+      required: true,
+    },
+```
+
+You can even declare computed types which will allow you to do some transformations on the data before you see it - think formatted dates, parsed item types etc.
+
+```
+parsed_date: {
+      type: "string",
+      resolve: (doc) => format(new Date(doc.date), "MMM dd, yyyy"),
+    },
+```
+
+## NextJS V13
+
+I like this a lot - I'm definitely having some trouble adjusting to the new manner at which

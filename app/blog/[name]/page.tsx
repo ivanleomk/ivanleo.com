@@ -14,6 +14,14 @@ export const getPost = (params: Params) => {
   })[0];
 };
 
+export async function generateMetadata({ params }: { params: Params }) {
+  const post = getPost(params);
+  return {
+    title: post.title,
+    description: post.description,
+  };
+}
+
 const BlogPage = async ({ params }: { params: Params }) => {
   const post = getPost(params);
   const Content = getMDXComponent(post.body.code);
@@ -32,7 +40,9 @@ const BlogPage = async ({ params }: { params: Params }) => {
         <p className="text-md text-slate-600">{post.description}</p>
       </div>
       <hr className="my-8 border-slate-200 w-40 mx-auto" />
-      <Content />
+      <div className="prose">
+        <Content />
+      </div>
     </div>
   );
 };
