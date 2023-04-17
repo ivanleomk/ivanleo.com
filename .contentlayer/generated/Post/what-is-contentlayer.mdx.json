@@ -1,0 +1,18 @@
+{
+  "title": "What is Contentlayer?",
+  "date": "2022-02-22T00:00:00.000Z",
+  "body": {
+    "raw": "\n**Contentlayer makes working with content easy.** It is a content preprocessor that validates and transforms your content into type-safe JSON you can easily import into your application.\n",
+    "code": "var Component=(()=>{var m=Object.create;var r=Object.defineProperty;var u=Object.getOwnPropertyDescriptor;var x=Object.getOwnPropertyNames;var y=Object.getPrototypeOf,d=Object.prototype.hasOwnProperty;var f=(t,n)=>()=>(n||t((n={exports:{}}).exports,n),n.exports),j=(t,n)=>{for(var e in n)r(t,e,{get:n[e],enumerable:!0})},i=(t,n,e,a)=>{if(n&&typeof n==\"object\"||typeof n==\"function\")for(let s of x(n))!d.call(t,s)&&s!==e&&r(t,s,{get:()=>n[s],enumerable:!(a=u(n,s))||a.enumerable});return t};var g=(t,n,e)=>(e=t!=null?m(y(t)):{},i(n||!t||!t.__esModule?r(e,\"default\",{value:t,enumerable:!0}):e,t)),h=t=>i(r({},\"__esModule\",{value:!0}),t);var p=f((O,c)=>{c.exports=_jsx_runtime});var D={};j(D,{default:()=>C,frontmatter:()=>_});var o=g(p()),_={title:\"What is Contentlayer?\",date:new Date(1645488e6)};function l(t){let n=Object.assign({p:\"p\",strong:\"strong\"},t.components);return(0,o.jsxs)(n.p,{children:[(0,o.jsx)(n.strong,{children:\"Contentlayer makes working with content easy.\"}),\" It is a content preprocessor that validates and transforms your content into type-safe JSON you can easily import into your application.\"]})}function w(t={}){let{wrapper:n}=t.components||{};return n?(0,o.jsx)(n,Object.assign({},t,{children:(0,o.jsx)(l,t)})):l(t)}var C=w;return h(D);})();\n;return Component;"
+  },
+  "_id": "what-is-contentlayer.mdx",
+  "_raw": {
+    "sourceFilePath": "what-is-contentlayer.mdx",
+    "sourceFileName": "what-is-contentlayer.mdx",
+    "sourceFileDir": ".",
+    "contentType": "mdx",
+    "flattenedPath": "what-is-contentlayer"
+  },
+  "type": "Post",
+  "url": "/posts/what-is-contentlayer"
+}
