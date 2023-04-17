@@ -9,7 +9,7 @@ type Params = {
   name: string;
 };
 
-export const getPosts = (params: Params) => {
+const getPosts = (params: Params) => {
   return allPosts.filter((item) => {
     return (
       item.parsed_tags.filter((tag: { name: string; slug: string }) => {

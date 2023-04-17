@@ -25,6 +25,7 @@ You simply declare a schema and point them to a content directory. They then par
 
 Here's an example of what it looks like when you declare a type to be parsed from your markdown code
 
+<CodeTitle title="normal_types.ts" lang="ts" />
 ```ts
 title: {
       type: "string",
@@ -35,13 +36,16 @@ title: {
 
 You can even declare computed types which will allow you to do some transformations on the data before you see it - think formatted dates, parsed item types etc.
 
-```
-parsed_date: {
+<CodeTitle title="computed_types.ts" lang="ts" />
+```tsx showLineNumbers
+{
+  parsed_date: {
       type: "string",
       resolve: (doc) => format(new Date(doc.date), "MMM dd, yyyy"),
-    },
+    }
+}
 ```
 
 ## NextJS V13
 
-I like this a lot - I'm definitely having some trouble adjusting to the new manner at which
+I like this a lot - I initially had some trouble adjusting to the new manner at which

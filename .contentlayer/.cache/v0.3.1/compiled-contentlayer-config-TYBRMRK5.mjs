@@ -1,6 +1,8 @@
 // contentlayer.config.ts
 import { defineDocumentType, makeSource } from "contentlayer/source-files";
 import { format } from "date-fns";
+import { readFileSync } from "fs";
+import rehypePrettyCode from "rehype-pretty-code";
 function processString(inputString) {
   const escapedString = inputString.replace(/[\\"']/g, "\\$&").replace(/\u0000/g, "\\0");
   const lowerCaseString = escapedString.toLowerCase();
@@ -63,11 +65,34 @@ var Post = defineDocumentType(() => ({
     }
   }
 }));
+var themePath = "./assets/oneHunterTheme.json";
 var contentlayer_config_default = makeSource({
   contentDirPath: "posts",
-  documentTypes: [Post]
+  documentTypes: [Post],
+  mdx: {
+    rehypePlugins: [
+      [
+        rehypePrettyCode,
+        {
+          // theme: "github-dark",
+          theme: JSON.parse(readFileSync(themePath, "utf-8")),
+          onVisitLine(node) {
+            if (node.children.length === 0) {
+              node.children = [{ type: "text", value: " " }];
+            }
+          },
+          onVisitHighlightedLine(node) {
+            node.properties.className.push("line--highlighted");
+          },
+          onVisitHighlightedWord(node) {
+            node.properties.className = ["word--highlighted"];
+          }
+        }
+      ]
+    ]
+  }
 });
 export {
   contentlayer_config_default as default
 };
-//# sourceMappingURL=compiled-contentlayer-config-PJA3CA7S.mjs.map
+//# sourceMappingURL=compiled-contentlayer-config-TYBRMRK5.mjs.map

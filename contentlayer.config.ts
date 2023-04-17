@@ -1,5 +1,7 @@
 import { defineDocumentType, makeSource } from "contentlayer/source-files";
 import { format } from "date-fns";
+import { readFileSync } from "fs";
+import rehypePrettyCode from "rehype-pretty-code";
 
 function processString(inputString: string) {
   const escapedString = inputString
@@ -69,7 +71,32 @@ const Post = defineDocumentType(() => ({
   },
 }));
 
+const themePath = "./assets/oneHunterTheme.json";
 export default makeSource({
   contentDirPath: "posts",
   documentTypes: [Post],
+  mdx: {
+    rehypePlugins: [
+      [
+        rehypePrettyCode,
+        {
+          // theme: "github-dark",
+          theme: JSON.parse(readFileSync(themePath, "utf-8")),
+          onVisitLine(node: any) {
+            // Prevent lines from collapsing in `display: grid` mode, and allow empty
+            // lines to be copy/pasted
+            if (node.children.length === 0) {
+              node.children = [{ type: "text", value: " " }];
+            }
+          },
+          onVisitHighlightedLine(node: any) {
+            node.properties.className.push("line--highlighted");
+          },
+          onVisitHighlightedWord(node: any) {
+            node.properties.className = ["word--highlighted"];
+          },
+        },
+      ],
+    ],
+  },
 });

@@ -1,5 +1,6 @@
 import Image from "next/image";
 import "./globals.css";
+import "./mdx.css";
 import Script from "next/script";
 import { envSchema } from "@/types/env";
 import { Analytics } from "@vercel/analytics/react";
