@@ -31,7 +31,6 @@ export default function RootLayout({
   return (
     <html lang="en">
       <Analytics />
-      <Script src="https://tally.so/widgets/embed.js" />
       <body className="">
         <header className="container mx-auto max-w-3xl">
           <div className="flex flex-col items-start sm:flex-row sm:items-center sm:justify-between border-b py-4 mx-4">
@@ -65,9 +64,6 @@ export default function RootLayout({
         </header>
         <div className="container mx-auto pt-2 max-w-3xl">
           <div className="mx-4">{children}</div>
-        </div>
-        <div className="container mx-auto pt-2 max-w-3xl">
-          <ContactUs />
         </div>
       </body>
     </html>
