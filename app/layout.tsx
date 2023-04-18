@@ -32,12 +32,6 @@ export default function RootLayout({
     <html lang="en">
       <Analytics />
       <Script src="https://tally.so/widgets/embed.js" />
-      <Script
-        id="tally-embed"
-        dangerouslySetInnerHTML={{
-          __html: `Tally.loadEmbeds()`,
-        }}
-      />
       <body className="">
         <header className="container mx-auto max-w-3xl">
           <div className="flex flex-col items-start sm:flex-row sm:items-center sm:justify-between border-b py-4 mx-4">
