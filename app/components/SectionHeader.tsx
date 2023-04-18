@@ -9,8 +9,8 @@ type Props = {
 const SectionHeader = ({ children, title, description = "" }: Props) => {
   return (
     <div>
-      <h1 className="text-md">{title}</h1>
-      <p className="mt-1 mb-4 text-sm leading-8 text-gray-600">{description}</p>
+      <h1 className="text-sm text-gray-700">{title}</h1>
+      <p className="mt-1 mb-4 text-xs leading-8 text-gray-600">{description}</p>
       {children}
     </div>
   );

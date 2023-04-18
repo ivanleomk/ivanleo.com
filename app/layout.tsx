@@ -4,6 +4,8 @@ import "./mdx.css";
 import { envSchema } from "@/types/env";
 import { Analytics } from "@vercel/analytics/react";
 import Link from "next/link";
+import ContactUs from "./components/Newsletter";
+import Script from "next/script";
 
 export const metadata = {
   title: "Ivan Leo",
@@ -27,23 +29,31 @@ export default function RootLayout({
 
   return (
     <html lang="en">
+      <Script src="https://tally.so/widgets/embed.js" />
       <Analytics />
       <body className="">
         <header className="container mx-auto max-w-3xl">
           <div className="flex flex-col items-start sm:flex-row sm:items-center sm:justify-between border-b py-4 mx-4">
-            <div className="block h-10 w-10 overflow-hidden rounded-full">
-              <Image src="/ProfilePic.jpeg" alt="Logo" width={48} height={48} />
-            </div>
-            <div className="flex flex-col space-y-1 text-sm leading-none">
-              <a
-                href="https://twitter.com/ivanleomk"
-                target="_blank"
-                rel="noreferrer"
-                className="flex items-center space-x-2"
-              >
-                <p className="font-bold">@ivanleomk</p>
-              </a>
-              <span>I write code sometimes</span>
+            <div className="flex items-center space-x-2">
+              <div className="block h-10 w-10 overflow-hidden rounded-full">
+                <Image
+                  src="/ProfilePic.jpeg"
+                  alt="Logo"
+                  width={48}
+                  height={48}
+                />
+              </div>
+              <div className="flex flex-col space-y-1 text-sm leading-none">
+                <a
+                  href="https://twitter.com/ivanleomk"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="flex items-center space-x-2"
+                >
+                  <p className="font-bold">@ivanleomk</p>
+                </a>
+                <span>I write code sometimes</span>
+              </div>
             </div>
 
             <div className="flex items-center space-x-4 cursor-pointer my-2 sm:my-0">
@@ -62,7 +72,9 @@ export default function RootLayout({
         <div className="container mx-auto pt-2 max-w-3xl">
           <div className="mx-4">{children}</div>
         </div>
-        <div className="container mx-auto pt-2 max-w-3xl"></div>
+        <div className="container mx-auto pt-2 max-w-3xl">
+          <ContactUs />
+        </div>
       </body>
     </html>
   );

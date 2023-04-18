@@ -75,11 +75,7 @@ const Tweet = ({ data }: Props) => {
             {format(new Date(data.created_at), "h:mm a - MMM d, yyyy")}
           </p>
           <div className="flex text-gray-700 mt-2">
-            <div
-              className="flex items-center mr-4 text-gray-500 hover:text-blue-600 transition hover:underline"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
+            <div className="flex items-center mr-4 text-gray-500 hover:text-blue-600 transition hover:underline">
               <svg className="mr-2" width="24" height="24" viewBox="0 0 24 24">
                 <path
                   className="fill-current"
