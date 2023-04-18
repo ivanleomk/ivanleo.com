@@ -9,8 +9,8 @@ import Callout from "@/app/components/Callout";
 import KommyImage from "@/app/components/KommyImage";
 import KommyLink from "@/app/components/KommyLink";
 import Pre from "@/app/components/Pre";
-import { getTweet } from "react-tweet/api";
 import Tweet from "@/app/components/Tweet";
+import { getAllTweetData } from "@/app/utils/tweet";
 
 type Params = {
   name: string;
@@ -101,11 +101,13 @@ export async function generateMetadata({ params }: { params: Params }) {
 
 const BlogPage = async ({ params }: { params: Params }) => {
   const post = getPost(params);
+  const tweetDataCache = await getAllTweetData();
+  const tweetData = tweetDataCache.data;
   const Content = getMDXComponent(post.body.code);
 
-  const StaticTweet = ({ id }) => {
+  const StaticTweet = ({ id }: { id: keyof typeof tweetData }) => {
     // Use the tweets map that is present in the outer scope to get the content associated with the id passed as prop
-    return <Tweet />;
+    return <Tweet data={tweetData[id]} />;
   };
 
   return (

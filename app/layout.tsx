@@ -5,6 +5,8 @@ import Script from "next/script";
 import { envSchema } from "@/types/env";
 import { Analytics } from "@vercel/analytics/react";
 import Link from "next/link";
+import { useEffect } from "react";
+import ContactUs from "./components/Newsletter";
 
 export const metadata = {
   title: "Ivan Leo",
@@ -25,9 +27,17 @@ export default function RootLayout({
   if (!env.success) {
     throw new Error("Invalid Environment Variable config");
   }
+
   return (
     <html lang="en">
       <Analytics />
+      <Script src="https://tally.so/widgets/embed.js" />
+      <Script
+        id="tally-embed"
+        dangerouslySetInnerHTML={{
+          __html: `Tally.loadEmbeds()`,
+        }}
+      />
       <body className="">
         <header className="container mx-auto max-w-3xl">
           <div className="flex flex-col items-start sm:flex-row sm:items-center sm:justify-between border-b py-4 mx-4">
@@ -61,6 +71,9 @@ export default function RootLayout({
         </header>
         <div className="container mx-auto pt-2 max-w-3xl">
           <div className="mx-4">{children}</div>
+        </div>
+        <div className="container mx-auto pt-2 max-w-3xl">
+          <ContactUs />
         </div>
       </body>
     </html>
