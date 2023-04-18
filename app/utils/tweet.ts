@@ -10,6 +10,7 @@ type TweetCache = {
 };
 
 export const getAllTweetData = async () => {
+  // We only run this chunk in production
   const TWEET_RE = /<StaticTweet\sid="[0-9]+"\s\/>/g;
 
   const docsDirectory = join(process.cwd(), "posts");
@@ -32,6 +33,12 @@ export const getAllTweetData = async () => {
 
   const cache: TweetCache = JSON.parse(fs.readFileSync(cachePath, "utf-8"));
   const prevTweets = new Set(cache?.tweetIds || []);
+
+  if (process.env.NODE_ENV !== "development") {
+    return cache;
+  }
+
+  // Data is only updated in development - limited payoff updating likes/retweets in prod lol.
 
   const fileNames = fs.readdirSync(docsDirectory);
 
