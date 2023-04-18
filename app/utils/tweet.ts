@@ -13,10 +13,10 @@ export const getAllTweetData = async () => {
   const TWEET_RE = /<StaticTweet\sid="[0-9]+"\s\/>/g;
 
   const docsDirectory = join(process.cwd(), "posts");
-  const cachePath = join(process.cwd(), "cache", "cache.json");
+  const cachePath = join(process.cwd(), "tweets", "cache.json");
 
-  if (!fs.existsSync(join(process.cwd(), "cache"))) {
-    fs.mkdirSync(join(process.cwd(), "cache"));
+  if (!fs.existsSync(join(process.cwd(), "tweets"))) {
+    fs.mkdirSync(join(process.cwd(), "tweets"));
   }
 
   if (!fs.existsSync(cachePath)) {
