@@ -28,7 +28,6 @@ export default function RootLayout({
 
   return (
     <html lang="en">
-      <Script src="https://tally.so/widgets/embed.js" />
       <Analytics />
       <body className="">
         <header className="container mx-auto max-w-3xl">
