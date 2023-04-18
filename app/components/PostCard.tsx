@@ -14,7 +14,7 @@ const PostCard = ({ post }: Props) => {
     >
       <div className="group relative">
         <Link href={`/blog/${post.slug}`}>
-          <h3 className="mt-3 text-lg font-semibold leading-6 text-gray-900 group-hover:text-gray-600">
+          <h3 className="mt-3 text-sm font-semibold leading-4 text-gray-900 group-hover:text-gray-600">
             {post.title}
           </h3>
         </Link>
@@ -23,7 +23,7 @@ const PostCard = ({ post }: Props) => {
             {post.parsed_date}
           </time>
         </div>
-        <p className="my-2 line-clamp-3 text-sm leading-6 text-gray-600">
+        <p className="my-2 line-clamp-3 text-xs leading-6 text-gray-600">
           {post.description}
         </p>
         <div className="text-xs my-2 space-x-2">

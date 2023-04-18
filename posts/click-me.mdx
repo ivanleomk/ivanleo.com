@@ -7,7 +7,7 @@ categories:
 description: I've been working on a new website for a while now. Here's what I've learned.
 ---
 
-# Introduction
+### Introduction
 
 I wanted to redesign my site because previous versions were very complex and I wanted to simplify it. I also wanted to try out some new libraries and frameworks.
 
@@ -15,7 +15,7 @@ The code is entirely open-source and you can see it [here](https://github.com/iv
 
 So without ado, let's see what are some of the new additions.
 
-## Content Layer
+#### Content Layer
 
 > You can check out Content Layer [here](https://www.contentlayer.dev/)
 
@@ -55,7 +55,7 @@ You can even declare computed types which will allow you to do some transformati
   Enyong for getting it all nailed down and providing some useful components.
 </Callout>
 
-## NextJS V13
+#### NextJS V13
 
 I like this a lot - I initially had some trouble adjusting to the new manner in which the pages are structured but I got used to it pretty quickly.
 
@@ -69,7 +69,24 @@ I like this a lot - I initially had some trouble adjusting to the new manner in 
 
 What I've found extremely useful is the colocation of files within a specific folder. While my use case is not sufficiently complex, I've found it to be more intuitive when you can see things that way.
 
-# Goal for this website
+Additionally, the metadata support for SEO is first class, just look at how you declare it within a page
+
+<CodeTitle title="page.ts" lang="ts" />
+```tsx showLineNumbers
+export const metadata = {
+  title: "Ivan Leo",
+  description:
+    "Hey there! I'm a full stack engineer based in Singapore 🇸🇬. Welcome to my blog.",
+  author: "Ivan Leo",
+};
+
+...other stuff
+
+```
+
+That's all you need to render out your metadata within the page. There are a bunch of other optimisations I'd like to play with further down the line (Eg. OG image generation on the fly, etc) but we'll save that for another post.
+
+### Goal for this website
 
 I think the overall goal for this website is two fold
 
@@ -78,3 +95,4 @@ I think the overall goal for this website is two fold
 2. I'd also like to keep myself accountable and start building and shipping products instead of just leaving them to limbo on my local machine and github.
 
 Excited for what is to come.
+```

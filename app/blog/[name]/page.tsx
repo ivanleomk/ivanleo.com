@@ -118,10 +118,10 @@ const BlogPage = async ({ params }: { params: Params }) => {
       </Link>
 
       <div className="grid gap-2">
-        <h1 className="mt-2 inline-block text-xl font-extrabold leading-tight text-slate-900 lg:text-2xl">
+        <h1 className="mt-2 inline-block text-sm font-extrabold leading-tight text-slate-900 lg:text-2xl">
           {post.title}
         </h1>
-        <p className="text-md text-slate-600">{post.description}</p>
+        <p className="text-sm text-slate-600">{post.description}</p>
       </div>
       <hr className="my-8 border-slate-200 w-40 mx-auto" />
       <div className="prose">

@@ -7,9 +7,9 @@ const WorklogPage = () => {
       title="Work-Log"
       description="This will just be a long form daily journal where I sketch out things"
     >
-      <div className="text-sm leading-6">
-        <h1>17 Apr 2023</h1>
-        <p>
+      <div className="text-xs leading-6">
+        <h1 className="text-sm text-gray-600">17 Apr 2023</h1>
+        <p className="mt-4">
           Finished up draft 1 of the new website. Moving on to start writing up
           articles. Excited to finally integrate the blog into the website and
           to have a working version which looks nice
