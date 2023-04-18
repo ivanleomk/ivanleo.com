@@ -16,6 +16,7 @@ const Tweet = ({ data }: Props) => {
       href={`https://twitter.com/${data.user.screen_name}/status/${data.id_str}`}
       target="_blank"
       rel="noopener noreferrer"
+      className="no-underline"
     >
       <div className="relative py-3 sm:max-w-xl sm:mx-auto ">
         <div className="rounded-lg border border-gray-300 px-6 py-2 w-full">
@@ -74,9 +75,8 @@ const Tweet = ({ data }: Props) => {
             {format(new Date(data.created_at), "h:mm a - MMM d, yyyy")}
           </p>
           <div className="flex text-gray-700 mt-2">
-            <a
+            <div
               className="flex items-center mr-4 text-gray-500 hover:text-blue-600 transition hover:underline"
-              href="#"
               target="_blank"
               rel="noopener noreferrer"
             >
@@ -87,7 +87,7 @@ const Tweet = ({ data }: Props) => {
                 />
               </svg>
               <span>{data.conversation_count}</span>
-            </a>
+            </div>
             {/* TODO: This will be updated once we get twitter api */}
             {/* <a
             className="flex items-center mr-4 text-gray-500 hover:text-green-600 transition hover:underline"
@@ -103,12 +103,7 @@ const Tweet = ({ data }: Props) => {
             </svg>
             <span>{data.quoted_tweet?.retweet_count}</span>
           </a> */}
-            <a
-              className="flex items-center text-gray-500 hover:text-red-600 transition hover:underline"
-              href="#"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
+            <div className="flex items-center text-gray-500 hover:text-red-600 transition hover:underline">
               <svg className="mr-2" width="24" height="24" viewBox="0 0 24 24">
                 <path
                   className="fill-current"
@@ -116,7 +111,7 @@ const Tweet = ({ data }: Props) => {
                 />
               </svg>
               <span>{data.favorite_count}</span>
-            </a>
+            </div>
           </div>
         </div>
       </div>

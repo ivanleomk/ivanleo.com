@@ -1,12 +1,9 @@
 import Image from "next/image";
 import "./globals.css";
 import "./mdx.css";
-import Script from "next/script";
 import { envSchema } from "@/types/env";
 import { Analytics } from "@vercel/analytics/react";
 import Link from "next/link";
-import { useEffect } from "react";
-import ContactUs from "./components/Newsletter";
 
 export const metadata = {
   title: "Ivan Leo",
@@ -65,6 +62,7 @@ export default function RootLayout({
         <div className="container mx-auto pt-2 max-w-3xl">
           <div className="mx-4">{children}</div>
         </div>
+        <div className="container mx-auto pt-2 max-w-3xl"></div>
       </body>
     </html>
   );
