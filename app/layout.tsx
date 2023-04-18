@@ -4,7 +4,6 @@ import "./mdx.css";
 import { envSchema } from "@/types/env";
 import { Analytics } from "@vercel/analytics/react";
 import Link from "next/link";
-import ContactUs from "./components/Newsletter";
 import Script from "next/script";
 
 export const metadata = {
@@ -71,9 +70,6 @@ export default function RootLayout({
         </header>
         <div className="container mx-auto pt-2 max-w-3xl">
           <div className="mx-4">{children}</div>
-        </div>
-        <div className="container mx-auto pt-2 max-w-3xl">
-          <ContactUs />
         </div>
       </body>
     </html>
