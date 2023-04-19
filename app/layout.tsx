@@ -5,6 +5,7 @@ import { envSchema } from "@/types/env";
 import { Analytics } from "@vercel/analytics/react";
 import Link from "next/link";
 import Script from "next/script";
+import ContactUs from "./components/Newsletter";
 
 export const metadata = {
   title: "Ivan Leo",
@@ -28,6 +29,7 @@ export default function RootLayout({
 
   return (
     <html lang="en">
+      <Script src="https://tally.so/widgets/embed.js" />
       <Analytics />
       <body className="">
         <header className="container mx-auto max-w-3xl">
@@ -69,6 +71,9 @@ export default function RootLayout({
         </header>
         <div className="container mx-auto pt-2 max-w-3xl">
           <div className="mx-4">{children}</div>
+        </div>
+        <div className="container mx-auto pt-2 max-w-3xl">
+          <ContactUs />
         </div>
       </body>
     </html>

@@ -21,6 +21,22 @@ const getPosts = (params: Params) => {
 
 const Page = ({ params }: { params: Params }) => {
   const Posts = getPosts(params);
+
+  if (!Posts.length) {
+    return (
+      <>
+        <Link className="flex items-center mb-10" href="/posts">
+          <ArrowLeftIcon className="w-4 h-4" />
+          <p className="text-sm">See All Posts</p>
+        </Link>
+        <SectionHeader
+          title="No Posts Found"
+          description={`There are no posts tagged under the tag ${params.name}`}
+        />
+      </>
+    );
+  }
+
   const categoryName = Posts[0].parsed_tags?.filter(
     (tag: { name: string; slug: string }) => {
       return tag.slug === params.name;
@@ -29,7 +45,7 @@ const Page = ({ params }: { params: Params }) => {
 
   return (
     <>
-      <Link className="flex items-center mb-10" href="/">
+      <Link className="flex items-center mb-10" href="/posts">
         <ArrowLeftIcon className="w-4 h-4" />
         <p className="text-sm">See All Posts</p>
       </Link>

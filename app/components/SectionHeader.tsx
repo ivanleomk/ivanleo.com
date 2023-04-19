@@ -1,16 +1,21 @@
 import React from "react";
 
 type Props = {
-  children: React.ReactNode;
+  children?: React.ReactNode;
   title: string;
   description?: string;
 };
 
-const SectionHeader = ({ children, title, description = "" }: Props) => {
+const SectionHeader = ({ children = null, title, description = "" }: Props) => {
   return (
     <div>
-      <h1 className="text-sm text-gray-700">{title}</h1>
-      <p className="mt-1 mb-4 text-xs leading-8 text-gray-600">{description}</p>
+      <div className="max-w-2xl mx-5 sm:mx-0">
+        <h1 className="text-4xl font-display tracking-tight text-zinc-800 sm:text-5xl">
+          {title}
+        </h1>
+        <p className="mt-6 text-base text-zinc-600">{description}</p>
+      </div>
+
       {children}
     </div>
   );
