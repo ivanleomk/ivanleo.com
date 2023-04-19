@@ -112,16 +112,16 @@ const BlogPage = async ({ params }: { params: Params }) => {
 
   return (
     <div className="container relative py-6 lg:py-10">
-      <Link className="flex items-center" href="/">
+      <Link className="flex text-sm items-center space-x-2 mb-4" href="/">
         <ArrowLeftIcon className="w-8 h-8" />
-        <p>back</p>
+        <p>back?</p>
       </Link>
 
       <div className="grid gap-2">
-        <h1 className="mt-2 inline-block text-sm font-extrabold leading-tight text-slate-900 lg:text-2xl">
+        <h1 className="mt-2 inline-block text-md font-extrabold leading-tight text-slate-900 lg:text-2xl">
           {post.title}
         </h1>
-        <p className="text-sm text-slate-600">{post.description}</p>
+        <p className="text-xs text-slate-600">{post.description}</p>
       </div>
       <hr className="my-8 border-slate-200 w-40 mx-auto" />
       <div className="prose">
