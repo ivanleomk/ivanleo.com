@@ -14,7 +14,9 @@ export default function Callout({ className, children, ...props }: ICallout) {
       )}
       {...props}
     >
-      <div className={clsxm("m-0 text-lg", className)}>{children}</div>
+      <div className={clsxm("m-0 text-lg break-words", className)}>
+        {children}
+      </div>
     </div>
   );
 }
