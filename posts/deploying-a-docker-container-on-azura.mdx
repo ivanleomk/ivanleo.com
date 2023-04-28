@@ -1,0 +1,134 @@
+---
+title: Deploying a Docker Container on Azure
+date: 2022-04-28
+categories:
+  - Docker
+  - Azure
+description: Escaping the dreadful pit of localhost
+---
+
+## Motivation
+
+I've been playing around with azure a fair bit recenty and I wanted to deploy a docker container to a web app. I've done this before but I wanted to document the process for future reference.
+
+## Create the Registry
+
+<CodeTitle title="create-container" lang="bash" />
+```bash
+az group create --name <nameOfResourceGroup> --location <location>
+
+````
+
+<Callout>
+  Try to pick a location that is close to you. This way, you'll have lower
+  latency. I chose `southeastasia` because I'm in Singapore.
+</Callout>
+
+Next, you'll need to then create a registry. This will store all your docker images that you wish to work .
+
+<CodeTitle title="create-registry" lang="bash" />
+```bash
+az acr create --resource-group schulz --name <nameOfRegistry> --sku Basic
+
+
+````
+
+You'll get a massive JSON file that'll be output to your server. Make sure to look through it and save two values
+
+<CodeTitle title="response.json" lang="json" />
+```json
+{
+    //...
+    loginServer: <Where your registry resides>,
+
+    //...
+
+}
+
+````
+
+Next, you'll want to login to your az registry. You can do so by running the following command
+
+```bash
+az acr login --name <nameOfRegistry>
+````
+
+If it's successfull, you should get the following response that looks something like this
+
+```bash
+(venv) ➜  filesplitter git:(main) ✗ az acr login --name <nameOfRegistry>
+Login Succeeded
+```
+
+Lastly, enable your admin user on the registry
+
+```bash
+ az acr update -n <nameOfRegistry> --admin-enabled true
+```
+
+## Tag Your Image
+
+You can see a list of images that you have locally with docker using
+
+```bash
+docker images
+```
+
+This will in turn give you a list of images that you have locally.
+
+```bash
+REPOSITORY                                    TAG                IMAGE ID       CREATED          SIZE
+<nameOfImage>                                 latest             628f83ffe348   26 minutes ago   1.35GB
+```
+
+You'll want to tag the image that you want to push to your registry. You can do so by running the following command
+
+```bash
+docker tag <nameOfImage> <loginServer>/<nameOfImage>:v1
+```
+
+Your image will then be identified with the tag of `<loginServer>/<nameOfImage>:v1`.
+
+<Callout>
+  Note that the name of the local image does not need to match the name of the
+  image on the registry.
+</Callout>
+
+You can then verify that your image has been pushed to the registry you created by running the command
+
+```bash
+az acr repository list --name <nameOfRegistry> --output table
+```
+
+which should in turn give you the output as
+
+```bash
+Result
+-------------
+<nameOfImage>
+```
+
+## Deploying your image
+
+Let's do a quick recap of what we've done
+
+1. We've succesfully created a new registry to house our docker image
+2. We've tagged our image and pushed it to the registry
+
+amd now all that's left is to tell azure that we want to deploy our image. We can do so with the following command
+
+<CodeTitle title="deploy-container" lang="bash" />
+```bash
+az container create --resourceGroup <nameOfResourceGroup> --name <nameOfContainer> --image <imageTag> --dns-name-label <nameOfContainer> --ports <port you want to expose> --registry-username <nameOfRegistry> --registry-password <passwordOfRegistry> --environment-variables <any environment variables you might want to expose>
+```
+
+If you have an `.env` file which looks like this
+
+```bash
+env1=value1
+env2=value2
+```
+
+Now just run the command and you're good to go!.
+
+you should pass in the environment variables as `'env1'='value1' 'env2=value2'`. Note that you'll need to wrap the environment variables in single quotes.

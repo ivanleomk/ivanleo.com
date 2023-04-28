@@ -31,7 +31,7 @@ const CodeBlocks = {
   p: ({ className, ...props }: React.HTMLAttributes<HTMLParagraphElement>) => (
     <p
       className={clsxm(
-        "text-xl leading-7 [&:not(:first-child)]:mt-6",
+        "text-xl leading-7 [&:not(:first-child)]:mt-6 break-words",
         className
       )}
       {...props}
