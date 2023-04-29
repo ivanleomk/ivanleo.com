@@ -2,5 +2,6 @@
 
 import clickMeMdx from './click-me.mdx.json' assert { type: 'json' }
 import deployingADockerContainerOnAzuraMdx from './deploying-a-docker-container-on-azura.mdx.json' assert { type: 'json' }
+import usingCloudflareWorkersInNextjsMdx from './using-cloudflare-workers-in-nextjs.mdx.json' assert { type: 'json' }
 
-export const allPosts = [clickMeMdx, deployingADockerContainerOnAzuraMdx]
+export const allPosts = [clickMeMdx, deployingADockerContainerOnAzuraMdx, usingCloudflareWorkersInNextjsMdx]
