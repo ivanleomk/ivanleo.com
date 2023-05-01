@@ -19,7 +19,7 @@ export default function Home() {
           I&apos;m a software engineer based in Singapore, currently working on
           building out a GPT-powered CRM for sales teams as part of Buildspace
           S3. I&apos;m interested in a variety of different areas - including
-          web3, Generative AI and most recently gardenning.{" "}
+          web3, Generative AI and most recently gardening.{" "}
         </p>
 
         <p className="mt-2 text-sm leading-6 px-4">
@@ -33,12 +33,13 @@ export default function Home() {
 
         <hr className="my-8 border-slate-200 w-40 mx-auto" />
         <SectionHeader title="" description="Recent Posts">
-          <div className=" w-100">
+          <div className=" w-100=
             {posts.slice(0, 5).map((post) => (
               <PostCard key={post._id} post={post} />
             ))}
           </div>
         </SectionHeader>
+        <div className="my-4 h-4" />
       </div>
       <div className="mb-10 h-2" />
     </div>
