@@ -1,0 +1,470 @@
+---
+title: Handling File Uploads with Cloudflare Workers
+date: 2022-04-29
+categories:
+  - R2
+  - Cloudflare Workers
+description:
+  R2's really cheap with zero egress - you should take advantage of it.
+---
+
+This is the first part of a multipart series on how to handle file uploads with
+Cloudflare Workers as I experiment and learn more about it. The eventual goal is
+to integrate my file upload service with clerk, nextjs and possibly even
+cloudflare's queue.
+
+We'll be using Wrangler for this project. Wrangler is a general-purpose cli tool
+used to help manage workers.
+
+## Prerequisites
+
+Before we create our worker, we need to make sure that we
+
+- Have a Cloudflare account
+- Install wrangler
+- Link wrangler to our Cloudflare account
+- Create a R2 Bucket to manage uploads
+
+<Callout>
+  Most of this initial portion is taken from the official cloudflare docs
+  located
+  [here](https://developers.cloudflare.com/r2/api/workers/workers-api-usage/)
+</Callout>
+
+First, you'll need to install wrangler on your local system
+
+```bash
+yarn global add wrangler
+```
+
+Next, you'll need to login to your Cloudflare account. The following command
+will open a new browser whereby you'll be able to work on
+
+```bash
+wrangler login
+```
+
+Once you've succesfully logged in, run the command as seen below
+
+```bash
+wrangler whoami
+```
+
+This should generate your account details as seen below
+
+```bash
+schulz wrangler whoami
+ ⛅️ wrangler 2.17.0
+--------------------
+Getting User settings...
+👋 You are logged in with an OAuth Token, associated with the email ivanleomk@gmail.com!
+┌───────────────────────────────┬──────────────────────────────────┐
+│ Account Name                  │ Account ID                       │
+├───────────────────────────────┼──────────────────────────────────┤
+│ <account email>               │ <accountId>                      │
+└───────────────────────────────┴──────────────────────────────────┘
+🔓 Token Permissions: If scopes are missing, you may need to logout and re-login.
+Scope (Access)
+- account (read)
+- user (read)
+- workers (write)
+- workers_kv (write)
+- workers_routes (write)
+- workers_scripts (write)
+- workers_tail (read)
+- d1 (write)
+- pages (write)
+- zone (read)
+- ssl_certs (write)
+- offline_access
+```
+
+Now make sure that you've created your bucket. You can create a bucket using the
+cloudflare dashboard or via the bash command line.
+
+```bash
+wrangler r2 bucket create <YOUR_BUCKET_NAME>
+```
+
+Verify that your bucket has been created by running the command
+
+```bash
+➜  file-upload git:(master) ✗ wrangler r2 bucket list
+Delegating to locally-installed wrangler@2.17.0 over global wrangler@2.17.0...
+Run `npx wrangler r2 bucket list` to use the local version directly.
+
+[
+  {
+    "name": <YOUR_BUCKET_NAME>,
+    "creation_date": "2023-04-28T23:23:33.263Z"
+  }
+]
+```
+
+## Creating the worker
+
+We can now create our worker using the command
+
+```bash
+wranger init <YOUR_WORKER_NAME>
+```
+
+This should give you a similar command as seen below
+
+```bash
+➜  schulz wrangler init tut
+ ⛅️ wrangler 2.17.0
+--------------------
+Using npm as package manager.
+✨ Created tut/wrangler.toml
+✔ Would you like to use git to manage this Worker? … yes
+✨ Initialized git repository at tut
+✔ No package.json found. Would you like to create one? … yes
+✨ Created tut/package.json
+✔ Would you like to use TypeScript? … yes
+✨ Created tut/tsconfig.json
+✔ Would you like to create a Worker at tut/src/index.ts? › Fetch handler
+✨ Created tut/src/index.ts
+✔ Would you like us to write your first test with Vitest? … yes
+✨ Created tut/src/index.test.ts
+npm WARN config init.author.name Use `--init-author-name` instead.
+npm WARN deprecated rollup-plugin-inject@3.0.2: This package has been deprecated and is no longer maintained. Please use @rollup/plugin-inject.
+npm WARN deprecated sourcemap-codec@1.4.8: Please use @jridgewell/sourcemap-codec instead
+
+added 165 packages, and audited 166 packages in 46s
+
+20 packages are looking for funding
+  run `npm fund` for details
+
+found 0 vulnerabilities
+✨ Installed @cloudflare/workers-types, typescript, and vitest into devDependencies
+
+To start developing your Worker, run `cd tut && npm start`
+To start testing your Worker, run `npm test`
+To publish your Worker to the Internet, run `npm run deploy`
+```
+
+This will create a new directory with the name of your worker. Inside this
+directory, you'll find a file called `index.ts`. This is the file that we'll be
+working with.
+
+In this case, we've selected a few options
+
+1. We will be using typescript
+2. We have some basic default tests with Vitest set up
+3. We will be using git to manage our worker ( This is optional but recomended.
+   We will use a simple CI/CD to deploy our changes to our workers down the line
+   )
+
+## Setting up the worker
+
+We can specify configuration variables using the `config.toml` file. For this
+project, we can use the following configuration
+
+<CodeTitle title = "config.toml" lang="toml" />
+```toml
+name = "file-upload-multipart"
+main = "src/index.ts" # This is important. Make sure that you have it configured correctly
+compatibility_date = "2022-06-30"
+
+account_id = "YOUR_ACCOUNT_ID" # ← Replace with your Account ID.
+workers_dev = true # Allows for a dev deployment
+
+[[r2_buckets]]
+binding = 'MY_BUCKET' # <~ valid JavaScript variable name
+bucket_name = '<YOUR_BUCKET_NAME>'
+```
+
+
+For simplicity sake, we are going to use a simple header based authentication that checks a value we'll call `AUTH_KEY_SECRET`. We can add a new secret using wranger by running the command 
+
+```bash
+wrangler secret put AUTH_KEY_SECRET
+```
+
+You can use the following command to generate a random secret for use. 
+
+```bash
+node -e "console.log(require('crypto').randomBytes(256).toString('base64'));"
+```
+
+Here's the worker file that I'm using for this article
+
+<CodeTitle title="Cloudflare Worker" lang="ts" />
+```ts
+/**
+ * Welcome to Cloudflare Workers! This is your first worker.
+ *
+ * - Run `wrangler dev src/index.ts` in your terminal to start a development server
+ * - Open a browser tab at http://localhost:8787/ to see your worker in action
+ * - Run `wrangler publish src/index.ts --name my-worker` to publish your worker
+ *
+ * Learn more at https://developers.cloudflare.com/workers/
+ */
+
+export interface Env {
+  // Example binding to KV. Learn more at https://developers.cloudflare.com/workers/runtime-apis/kv/
+  // MY_KV_NAMESPACE: KVNamespace;
+  //
+  // Example binding to Durable Object. Learn more at https://developers.cloudflare.com/workers/runtime-apis/durable-objects/
+  // MY_DURABLE_OBJECT: DurableObjectNamespace;
+  //
+  // Example binding to R2. Learn more at https://developers.cloudflare.com/workers/runtime-apis/r2/
+  MY_BUCKET: R2Bucket;
+  //
+  // Example binding to a Service. Learn more at https://developers.cloudflare.com/workers/runtime-apis/service-bindings/
+  // MY_SERVICE: Fetcher;
+  AUTH_KEY_SECRET: string;
+}
+
+// Check requests for a pre-shared secret
+const hasValidHeader = (request: Request, env: Env) => {
+  return request.headers.get("X-Custom-Auth-Key") === env.AUTH_KEY_SECRET;
+};
+
+function authorizeRequest(request: Request, env: Env, key: string) {
+  return hasValidHeader(request, env);
+}
+
+export default {
+  async fetch(
+    request: Request,
+    env: Env,
+    ctx: ExecutionContext
+  ): Promise<Response> {
+    const url = new URL(request.url);
+    const key = url.pathname.slice(1);
+
+    if (!authorizeRequest(request, env, key)) {
+      return new Response("Forbidden", { status: 403 });
+    }
+
+    switch (request.method) {
+      case "PUT":
+        await env.MY_BUCKET.put(key, request.body);
+        return new Response(`Put ${key} successfully!`);
+      case "GET":
+        const object = await env.MY_BUCKET.get(key);
+
+        if (object === null) {
+          return new Response("Object Not Found", { status: 404 });
+        }
+
+        const headers = new Headers();
+        object.writeHttpMetadata(headers);
+        headers.set("etag", object.httpEtag);
+
+        return new Response(object.body, {
+          headers,
+        });
+      case "DELETE":
+        await env.MY_BUCKET.delete(key);
+        return new Response("Deleted!");
+
+      default:
+        return new Response("Method Not Allowed", {
+          status: 405,
+          headers: {
+            Allow: "PUT, GET, DELETE",
+          },
+        });
+    }
+  },
+};
+```
+
+## Testing the worker
+
+We need to create a fake bucket for testing. This can be done by running the command 
+
+```bash
+wrangler r2 bucket create <fakeBucketName>
+```
+
+and then adding it in our config.toml file as 
+
+<CodeTitle title = "config.toml" lang="toml" />
+```toml
+name = '<name of worker>' # ← Replace with your Worker's name.
+main = "src/index.ts"
+compatibility_date = "2022-06-30"
+
+account_id = '<account id which you got from wrangler whoami>'  # ← Replace with your Account ID.
+workers_dev = true
+
+[[r2_buckets]]
+binding = 'MY_BUCKET' # <~ valid JavaScript variable name
+bucket_name = '<name of bucket>'
+preview_bucket_name = "<name of dev bucket>"
+```
+
+At the same time, we also need to configure a `.dev.vars` file which contains all the environment secrets that we are using. In our case, since we are using a simple header based authentication, we can add the following to our `.dev.vars` file
+
+<CodeTitle title = ".dev.vars" lang="toml" />
+```bash
+AUTH_KEY_SECRET = TESTING
+```
+
+### Unit Testing
+
+We can now run a local instance of our worker using `vitest` by running the command `npm run test`. I've written the following test to check that our header based auth is working
+
+<CodeTitle title = "index.test.ts" lang = "ts" />
+```ts
+import { unstable_dev } from "wrangler";
+import type { UnstableDevWorker } from "wrangler";
+import { describe, expect, it, beforeAll, afterAll } from "vitest";
+
+describe("Worker", () => {
+  let worker: UnstableDevWorker;
+
+  beforeAll(async () => {
+    worker = await unstable_dev("src/index.ts", {
+      experimental: { disableExperimentalWarning: true },
+    });
+  });
+
+  afterAll(async () => {
+    await worker.stop();
+  });
+
+  it("should throw a forbidden error when header auth is not provided", async () => {
+    const resp = await worker.fetch("http://localhost/cat", {
+      method: "PUT",
+    });
+    if (resp) {
+      const text = await resp.text();
+      expect(text).toMatchInlineSnapshot('"Forbidden"');
+    }
+  });
+
+  it("should allow authenticated results through", async () => {
+    const resp = await worker.fetch("http://localhost/cat", {
+      method: "PUT",
+      headers: {
+        "X-Custom-Auth-Key": "TESTING",
+      },
+    });
+    if (resp) {
+      const text = await resp.text();
+      expect(text).toMatchInlineSnapshot('"Put cat successfully!"');
+    }
+  });
+});
+```
+
+We can now confirm if it works by running the command `npm run test`. If everything works, we should see the following output
+
+```bash
+✓ src/index.test.ts (2) 505ms
+
+ Test Files  1 passed (1)
+      Tests  2 passed (2)
+   Start at  12:16:45
+   Duration  1.29s (transform 62ms, setup 0ms, collect 387ms, tests 505ms, environment 0ms, prepare 91ms)
+
+
+ PASS  Waiting for file changes...
+       press h to show help, press q to quit
+```
+
+
+
+
+
+### Integration Testing
+
+Let's now test our endpoint locally. Wrangler allows us to do so by spinning up a local instance connected to a R2 Bucket. We can do so by running the command
+
+```bash
+wrangler dev --local
+```
+
+Note that we can see here that our worker is connected to the dev R2 Bucket that we created earlier which was listed under the property name of `preview_bucket_name`. 
+
+**Make sure to turn off local mode**. We can do so by pressing `l` in the terminal.
+
+```bash
+Delegating to locally-installed wrangler@2.17.0 over global wrangler@2.17.0...
+Run `npx wrangler dev --local` to use the local version directly.
+
+ ⛅️ wrangler 2.17.0 
+--------------------
+Want to try out the next version of local mode using the open-source Workers runtime?
+Switch out --local for --experimental-local and let us know what you think at https://discord.gg/cloudflaredev !
+Using vars defined in .dev.vars
+Your worker has access to the following bindings:
+- R2 Buckets:
+  - MY_BUCKET: fakeschulz
+- Vars:
+  - AUTH_KEY_SECRET: "(hidden)"
+⎔ Starting a local server...
+╭───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╮
+│ [b] open a browser, [d] open Devtools, [l] turn on local mode, [c] clear console, [x] to exit                                                                                                                                                                            │
+╰───────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────────╯
+Debugger listening on ws://127.0.0.1:53622/....
+For help, see: https://nodejs.org/en/docs/inspector
+Debugger attached.
+[mf:inf] Worker reloaded! (1.33KiB)
+[mf:inf] Listening on 0.0.0.0:8787
+[mf:inf] - http://127.0.0.1:8787
+[mf:inf] - http://192.168.32.11:8787
+[mf:inf] Updated `Request.cf` object cache!
+```
+
+As you can see, my local server can be called by sending requests to `http://localhost:8787/`.
+
+I recommend using [Thunder Client](https://marketplace.visualstudio.com/items?itemName=rangav.vscode-thunder-client) which comes out of the box as a VsCode Extension but you can use any other tool that you prefer....even curl.
+
+I've attached a snapshot of my thunder client configuration so that you can reproduce my api parameters.
+
+<KommyImage blogImage={true} src = "https://user-images.githubusercontent.com/45760326/235285053-42941b7d-6ea9-4e97-8abf-6ba171c580b8.png" width = {200} height = {200} caption = "Thunder Client Header Config" />
+
+<KommyImage blogImage={true} src = "https://user-images.githubusercontent.com/45760326/235283991-6d6ba635-a27f-442f-b9dc-717473efe66b.png" width = {200} height = {200} caption = "Thunder Client Body Config" />
+
+
+Let's try to now run the request and see if we can upload a new file with the key of `new-key`. If everything works, we should see the following response
+
+```bash
+Put new-key successfully!
+```
+
+We can also confirm that the file has been uploaded by running a `GET` command with the key of `new-key`. This should give us a valid image back that we uploaded previously when we make an api call to `http://localhost:8787/new-key`
+
+<KommyImage blogImage={true} src = "https://user-images.githubusercontent.com/45760326/235285186-4cdb8ea4-91d4-4554-b8c9-68744f74e198.png"  width = {200} height = {200} caption = "Get Request Result" />
+
+Let's now try to delete the file by running a `DELETE` command with the key of `new-key`. If everything works, we should see the following response
+
+```bash
+Deleted!
+```
+
+If the file has been succesfully deleted, we should get the following 404 response when we try to get an object from our r2-storage with the key of `new-key`
+
+```bash
+Object Not Found
+```
+
+
+# Publishing your Worker
+
+Publishing your worker is as simple as simply running the command as 
+
+```bash
+tut git:(master) ✗ npx wrangler publish
+
+
+npm WARN config init.author.name Use `--init-author-name` instead.
+ ⛅️ wrangler 2.17.0 
+--------------------
+Your worker has access to the following bindings:
+- R2 Buckets:
+  - MY_BUCKET: <name-of-bucket>
+Total Upload: 1.55 KiB / gzip: 0.65 KiB
+Uploaded <name of worker> (3.22 sec)
+Published <name of worker> (6.09 sec)
+  https://<name of worker>.<random user id>.workers.dev
+Current Deployment ID: <deployment id>
+```
+
+I hope this helped!

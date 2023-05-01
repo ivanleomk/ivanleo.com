@@ -33,13 +33,14 @@ export default function Home() {
 
         <hr className="my-8 border-slate-200 w-40 mx-auto" />
         <SectionHeader title="" description="Recent Posts">
-          <div className=" space-y-16 w-100">
+          <div className=" w-100">
             {posts.slice(0, 5).map((post) => (
               <PostCard key={post._id} post={post} />
             ))}
           </div>
         </SectionHeader>
       </div>
+      <div className="mb-10 h-2" />
     </div>
   );
 }
