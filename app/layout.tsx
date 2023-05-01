@@ -2,10 +2,8 @@ import Image from "next/image";
 import "./globals.css";
 import "./mdx.css";
 import { envSchema } from "@/types/env";
-import { Analytics } from "@vercel/analytics/react";
 import Link from "next/link";
 import Script from "next/script";
-import ContactUs from "./components/Newsletter";
 
 export const metadata = {
   title: "Ivan Leo",
@@ -29,7 +27,20 @@ export default function RootLayout({
 
   return (
     <html lang="en">
-      <Analytics />
+      <Script src="https://www.googletagmanager.com/gtag/js?id=G-MM8QMY5JWN" />
+      <Script
+        id="Google Tag"
+        strategy="afterInteractive"
+        dangerouslySetInnerHTML={{
+          __html: `
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+            
+              gtag('config', 'G-MM8QMY5JWN');
+              `,
+        }}
+      />
       <body className="">
         <header className="container mx-auto max-w-3xl">
           <div className="flex flex-col items-start sm:flex-row sm:items-center sm:justify-between border-b py-4 mx-4">
