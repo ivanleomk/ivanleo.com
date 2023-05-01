@@ -22,7 +22,7 @@ export default function KommyImage({
 }: IKommyImage) {
   if (blogImage) {
     return (
-      <figure className="mx-auto my-8 h-auto w-auto max-w-3xl overflow-clip rounded-md">
+      <figure className="mx-auto my-8 h-auto w-auto max-w-4xl overflow-clip rounded-md">
         <Image
           src={src}
           alt={alt}
