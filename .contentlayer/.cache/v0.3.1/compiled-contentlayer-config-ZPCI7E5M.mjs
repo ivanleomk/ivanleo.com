@@ -88,6 +88,15 @@ var contentlayer_config_default = makeSource({
             node.properties.className = ["word--highlighted"];
           }
         }
+      ],
+      [
+        rehypeAutolinkHeadings,
+        {
+          properties: {
+            className: ["subheading-anchor"],
+            ariaLabel: "Link to section"
+          }
+        }
       ]
     ]
   }
@@ -95,4 +104,4 @@ var contentlayer_config_default = makeSource({
 export {
   contentlayer_config_default as default
 };
-//# sourceMappingURL=compiled-contentlayer-config-TK6UVY7X.mjs.map
+//# sourceMappingURL=compiled-contentlayer-config-ZPCI7E5M.mjs.map

@@ -67,6 +67,7 @@ export const getAllTweetData = async () => {
   });
 
   const twitterIdList = Array.from(twitterIdSet);
+  console.log(twitterIdList);
 
   const getTweetPromises = twitterIdList.map((id) => {
     return getTweet(id);
