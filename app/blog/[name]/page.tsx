@@ -11,6 +11,7 @@ import KommyLink from "@/app/components/KommyLink";
 import Pre from "@/app/components/Pre";
 import Tweet from "@/app/components/Tweet";
 import { getAllTweetData } from "@/app/utils/tweet";
+import TableOfContents from "@/app/components/TableOfContent";
 
 type Params = {
   name: string;
@@ -31,19 +32,19 @@ const CodeBlocks = {
   p: ({ className, ...props }: React.HTMLAttributes<HTMLParagraphElement>) => (
     <p
       className={clsxm(
-        "text-xl leading-7 [&:not(:first-child)]:mt-6 break-words",
+        "text-md leading-7 [&:not(:first-child)]:mt-6 break-words",
         className
       )}
       {...props}
     />
   ),
   ul: ({ ...props }) => (
-    <ul className="my-6 ml-6 list-outside list-disc text-xl" {...props} />
+    <ul className="my-6 ml-6 list-outside list-disc text-md" {...props} />
   ),
   ol: ({ ...props }) => (
-    <ol className="my-6 ml-6 list-outside list-decimal text-xl" {...props} />
+    <ol className="my-6 ml-6 list-outside list-decimal text-md" {...props} />
   ),
-  li: ({ ...props }) => <li className="mt-2" {...props} />,
+  li: ({ ...props }) => <li className="mt-2 text-md leading-7" {...props} />,
   blockquote: ({
     className,
     ...props
@@ -52,6 +53,9 @@ const CodeBlocks = {
       className="mt-6 border-l-4 border-dark pl-6 italic text-dark [&>*]:text-zinc-600"
       {...props}
     />
+  ),
+  b: ({ ...props }: React.HTMLAttributes<HTMLTableElement>) => (
+    <b {...props} className="text-md leading-6" />
   ),
   table: ({ ...props }: React.HTMLAttributes<HTMLTableElement>) => (
     <div className="my-6 min-w-full overflow-y-auto rounded-md">
@@ -116,16 +120,19 @@ const BlogPage = async ({ params }: { params: Params }) => {
         <ArrowLeftIcon className="w-8 h-8" />
         <p>back?</p>
       </Link>
-
-      <div className="grid gap-2">
+      <div className="grid gap-2 text-center">
         <h1 className="mt-2 inline-block text-md font-extrabold leading-tight text-slate-900 lg:text-2xl">
           {post.title}
         </h1>
         <p className="text-xs text-slate-600">{post.description}</p>
       </div>
       <hr className="my-8 border-slate-200 w-40 mx-auto" />
-      <div className="prose">
-        <Content components={{ ...CodeBlocks, StaticTweet }} />
+      <div className="flex flex-col items-center justify-start lg:flex-row lg:items-start lg:justify-between">
+        <TableOfContents source={post.body.raw} />
+
+        <article className="max-w-full px-4 pb-8 text-dark lg:max-w-2xl">
+          <Content components={{ ...CodeBlocks, StaticTweet }} />
+        </article>
       </div>
     </div>
   );

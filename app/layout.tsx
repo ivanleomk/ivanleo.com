@@ -42,8 +42,8 @@ export default function RootLayout({
         }}
       />
       <body className="">
-        <header className="container mx-auto max-w-3xl">
-          <div className="flex flex-col items-start sm:flex-row sm:items-center sm:justify-between border-b py-4 mx-4">
+        <header className="container mx-auto max-w-4xl">
+          <div className="w-full flex flex-col items-start sm:flex-row sm:items-center sm:justify-between border-b py-4 mx-4">
             <div className="flex items-center space-x-2">
               <div className="block h-10 w-10 overflow-hidden rounded-full">
                 <Image
@@ -53,6 +53,7 @@ export default function RootLayout({
                   height={48}
                 />
               </div>
+
               <div className="flex flex-col space-y-1 text-sm leading-none">
                 <a
                   href="https://twitter.com/ivanleomk"
@@ -79,8 +80,8 @@ export default function RootLayout({
             </div>
           </div>
         </header>
-        <div className="container mx-auto pt-2 max-w-3xl">
-          <div className="mx-4">{children}</div>
+        <div className="container mx-auto pt-2 max-w-4xl">
+          <div className="mx-4 w-full">{children}</div>
         </div>
       </body>
     </html>

@@ -1,0 +1,549 @@
+---
+title: Configuring Next Auth with Next JS
+date: 2023-05-03
+categories:
+  - NextAuth
+  - NextJS
+  - Authentication
+description:
+  It's a bit tricky to set up Next Auth with NextJS. Let's walk through the entire process from start to finish.
+---
+
+## Introduction 
+
+### Motivation
+
+
+<Callout>
+
+Here is the [code](https://github.com/ivanleomk/next-auth-sample-next-13) and a [working deployment](https://next-auth-sample-next-13.vercel.app/) that you can play around with
+</Callout>
+
+
+I've tried a whole variety of different auth solutions and they've always felt a bit clunky. From Supabase to Clerk, I found it almost impossible to debug things whenever I encountered weird niche issues in my code that I either couldn't debug or trace. 
+
+I think this tweet from [Dax](https://twitter.com/thdxr) sums up my experience with auth libraries pretty well.
+
+<StaticTweet id="1651434348174778370" />
+
+So, when I saw this post from [Shadcn](https://shadcn.com/next-auth-postmark) about integrating next-auth with NextJS, I thought I'd give it a shot. 
+
+<Callout>
+NextAuth is a open-source library authentication library. It provides a lot of customisability out of the box but takes a bit of prodding to set up since the documentation is a bit stale.
+</Callout>
+
+### What we'll be building
+
+We'll be walking through a quick tutorial on how to secure your site using passwordless magic links. These are links that get sent via email to the user and allow them to log in to your site without having to remember a password.
+
+So, on a high level, this is what the entire process looks like.
+
+
+<KommyImage blogImage = {true} src = "https://user-images.githubusercontent.com/45760326/235831529-ba061dba-dc20-4376-98b9-b41a3539bf74.png" width = {400} height = {400} alt = "User Auth Flow" />
+
+
+This should take around 20-30 minutes to set up from start to end.
+
+## Steps 
+
+### Initialising a new project
+
+Let's start by initialisting a new NextJS 13 Project. We can do by running the command 
+
+```bash
+npx create-next-app@latest --experimental-app next-auth-sample
+```
+
+This will create a new NextJS project with the latest version of NextJS that's called `next-auth-sample`.
+
+Now let's walk through the steps that we'll need to take 
+
+1. Initialise a database 
+2. Configure the database using a `prisma.schema` file - I'm using planetscale in this case but you can use any database of your choice.
+3. Set up Next Auth 
+4. Create Accounts on Mailtrap and Postmark
+5. Test Locally 
+6. Deploy to Vercel
+
+You'll need a set of environment variables. I've indicated a list of them below so just copy and paste them into a `.env` file. **Make sure not to check these into source code.**
+
+```env
+# Prisma Requirement
+DATABASE_URL=
+
+# Next Auth Configuration
+NEXTAUTH_URL= 
+NEXTAUTH_SECRET=
+
+# Dev Mail Box
+EMAIL_SERVER_USER=
+EMAIL_SERVER_PASSWORD=
+EMAIL_SERVER_HOST=
+EMAIL_SERVER_PORT=
+EMAIL_FROM=
+
+# Prod Mail Box
+POSTMARK_API_TOKEN=
+SMTP_HOST=
+SMTP_PORT=
+SMTP_USER=
+SMTP_PASSWORD=
+SMTP_FROM=
+```
+
+Now let's install the dependencies that we will be using.
+
+
+
+```bash
+npm install next-auth @prisma/client @next-auth/prisma-adapter nodemailer 
+npm install prisma --save-dev
+```
+
+### Creating a prisma db
+
+Now that we have prisma installed, we need to modify package.json so that prisma generates a new client on every nextjs build. We can do so by modifying our `package.json` file as seen below.
+
+<CodeTitle title = "package.json" lang="json" />
+```json
+
+  ...
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "postinstall": "prisma generate"
+  },
+  ...
+```
+
+Now let's create a new file called `prisma.schema` and copy and paste the following code into it.
+
+```bash
+mkdir -p prisma && touch prisma/schema.prisma
+```
+
+We now need to fill up our schema.prisma file with a few models. We'll be using the following models.
+
+<CodeTitle title = "prisma.schema" lang="prisma" />
+```prisma
+generator client {
+    provider = "prisma-client-js"
+}
+
+datasource db {
+    provider     = "mysql"
+    url          = env("DATABASE_URL")
+    relationMode = "prisma"
+}
+
+model Account {
+    id                String  @id @default(cuid())
+    userId            String
+    type              String
+    provider          String
+    providerAccountId String
+    refresh_token     String? @db.Text
+    access_token      String? @db.Text
+    expires_at        Int?
+    token_type        String?
+    scope             String?
+    id_token          String? @db.Text
+    session_state     String?
+
+    user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+    @@unique([provider, providerAccountId])
+}
+
+model Session {
+    id           String   @id @default(cuid())
+    sessionToken String   @unique
+    userId       String
+    expires      DateTime
+    user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+    id            String    @id @default(cuid())
+    name          String?
+    email         String?   @unique
+    emailVerified DateTime?
+    image         String?
+    accounts      Account[]
+    sessions      Session[]
+}
+
+model VerificationToken {
+    identifier String
+    token      String   @unique
+    expires    DateTime
+
+    @@unique([identifier, token])
+}
+```
+
+Just to highlight a few things
+- **Relation Mode** : We're using `relation-mode` with prisma since planetscale doesn't support foreign keys. If you're not using planetscale, just remove this line.
+- **DATABASE_URL** : This is the url to your database. You can get this from your database provider. In my case, I'm using planetscale so I can get this from the planetscale dashboard. Make sure to have it filled in your .env file.
+
+Now that we have a schema, we can run the following command to update our database with the new schema.
+
+```bash
+npx prisma db push
+```
+
+This should initialise your database with the right variables and also give you a new prisma client that you can use to interact with your database.
+
+### Configuring our Adaptors
+
+<Callout>
+Make sure that you're created a valid [MailTrap](https://mailtrap.io/) account before continuing here and that you've updated the environment variables in your .env file. Otherwise you'll run into a lot of errors. 
+</Callout>
+
+Now that we've created our new database with the right variables and have a valid mailtrap account to send the emails, we can start configuring our adaptors. Your .env file should look like this now.
+
+```env
+# Prisma Requirement
+DATABASE_URL= # Database URL Goes Here
+
+# Next Auth Configuration
+NEXTAUTH_URL= http://localhost:3000 #This should match your current port
+NEXTAUTH_SECRET= # Custom Secret Goes Here
+
+# Dev Mail Box ( Mail Box provides these values for you when you create a test inbox )
+EMAIL_SERVER_USER= # Fill these in
+EMAIL_SERVER_PASSWORD= # Fill these in
+EMAIL_SERVER_HOST= # Fill these in
+EMAIL_SERVER_PORT= # Fill these in
+EMAIL_FROM= # Fill these in
+```
+
+Let's also create two more files that will correspond to the route `/` and `/dashboard`. In this example, `/dashboard` will be a protected route that can only be accessed by authenticated users. 
+
+<CodeTitle title = "src/app/page.tsx" lang="ts" />
+```ts
+import Image from "next/image";
+import { Inter } from "next/font/google";
+import Link from "next/link";
+
+const inter = Inter({ subsets: ["latin"] });
+
+export default function Home() {
+  return (
+    <div>
+      Main page. Click to go to <Link href="/dashboard">protected page</Link>
+    </div>
+  );
+}
+```
+
+<CodeTitle title = "src/app/dashboard/page.tsx" lang="ts" />
+```ts
+"use client";
+import React from "react";
+import { signOut } from "next-auth/react";
+
+const Dashboard = async () => {
+  return (
+    <div>
+      Dashboard is a protected page.
+      <button
+        onClick={() => {
+          signOut();
+        }}
+      >
+        Sign Out
+      </button>
+    </div>
+  );
+};
+
+export default Dashboard;
+```
+
+Next, we want to create a new file at `src/app/api/auth/[...nextauth]/route.ts`. Copy and paste the following code into it
+
+<CodeTitle title = "[...nextAuth].ts" lang="ts" />
+```ts
+import { PrismaAdapter } from "@next-auth/prisma-adapter";
+import { PrismaClient } from "@prisma/client";
+import NextAuth from "next-auth";
+import EmailProvider from "next-auth/providers/email";
+
+const prisma = new PrismaClient();
+
+const devConfig = EmailProvider({
+  server: {
+    host: process.env.EMAIL_SERVER_HOST,
+    port: process.env.EMAIL_SERVER_PORT,
+    auth: {
+      user: process.env.EMAIL_SERVER_USER,
+      pass: process.env.EMAIL_SERVER_PASSWORD,
+    },
+  },
+  from: process.env.EMAIL_FROM,
+});
+
+const handler = NextAuth({
+  providers: [devConfig],
+  session: {
+    strategy: "jwt",
+  },
+  adapter: PrismaAdapter(prisma),
+});
+
+export { handler as GET, handler as POST };
+```
+
+With all this set-up, we should have the infrastructure in place to be able to do some simple auth and sign in. Let's try it out by navigating to our main page and trying to access the protected dashboard.
+
+<KommyImage blogImage={true} src = "https://user-images.githubusercontent.com/45760326/235839218-ad4b15c8-12e7-4440-aa2f-c12e82233a84.gif" height = {400} width = {400} alt="Sample User Flow" />
+
+Try keying in any email address and click enter. You should get an email in your inbox that works out of the box with next auth. Click on the link and you should be redirected to the dashboard page.
+
+## Escaping the Test Inbox!
+
+### Testing Locally
+
+Before we upload our file up to Vercel, we need to make sure that everything is ok with our existing setup. To do so, we need to make sure that we have a valid SMTP server that we can use to send emails. You'll need an account with one of the supported email providers - basically anyone that provides you with a SMTP server out of the box should work. I'm using postmark but you can use any provider of your choice. 
+
+
+<Callout>
+If you're using Postmark, make sure that you have
+- Activated your account
+- A valid sender address to send emails from
+- A valid email template that you can use to send emails.
+</Callout>
+
+
+At this point, make sure to update your `.env` variables. 
+
+```env
+POSTMARK_API_TOKEN=
+SMTP_HOST=
+SMTP_PORT=
+SMTP_USER=
+SMTP_PASSWORD=
+SMTP_FROM= # This must be a valid Sender address that you've configured in PostMark.
+```
+
+Let's also do a bit of refactoring so that we have slightly nicer looking code. We're going to chuck all the auth stuff into a file `src/lib/auth.ts` and clean up our handler.
+
+<CodeTitle title = "src/lib/auth.ts" lang="ts" />
+```ts
+import { PrismaAdapter } from "@next-auth/prisma-adapter";
+import { PrismaClient } from "@prisma/client";
+import NextAuth from "next-auth";
+import EmailProvider from "next-auth/providers/email";
+import { Client } from "postmark";
+
+const prisma = new PrismaClient();
+
+const devConfig = EmailProvider({
+  server: {
+    host: process.env.EMAIL_SERVER_HOST,
+    port: process.env.EMAIL_SERVER_PORT,
+    auth: {
+      user: process.env.EMAIL_SERVER_USER,
+      pass: process.env.EMAIL_SERVER_PASSWORD,
+    },
+  },
+  from: process.env.EMAIL_FROM,
+});
+
+const prodConfig = EmailProvider({
+  server: {
+    host: process.env.SMTP_HOST,
+    port: Number(process.env.SMTP_PORT),
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASSWORD,
+    },
+  },
+  from: process.env.SMTP_FROM,
+  sendVerificationRequest: async ({ identifier, url, provider }) => {
+    const postmarkClient = new Client(process.env.POSTMARK_API_TOKEN as string);
+
+    const result = await postmarkClient.sendEmailWithTemplate({
+      TemplateId: 31612989,
+      To: identifier,
+      From: process.env.SMTP_FROM as string,
+      TemplateModel: {
+        url,
+      },
+      Headers: [
+        {
+          // Set this to prevent Gmail from threading emails.
+          // See https://stackoverflow.com/questions/23434110/force-emails-not-to-be-grouped-into-conversations/25435722.
+          Name: "X-Entity-Ref-ID",
+          Value: new Date().getTime() + "",
+        },
+      ],
+    });
+
+    if (result.ErrorCode) {
+      throw new Error(result.Message);
+    }
+  },
+});
+
+// We only get the email client sending out real emails when we are working with a production environment.
+// const emailProvider = (process.env.VERCEL_ENV && process.env.VERCEL_ENV === "production") ? [prodConfig] : [devConfig];
+const emailProvider = (true) ? [prodConfig] : [devConfig];
+
+export const authOptions = {
+  providers: [...emailProvider],
+  session: {
+    strategy: "jwt",
+  },
+  adapter: PrismaAdapter(prisma),
+};
+```
+
+<Callout>
+  You can learn more about Vercel's deployment environment variables [here](https://vercel.com/docs/concepts/projects/environment-variables/system-environment-variables)
+</Callout>
+
+
+Now, let's update our `src/app/api/auth/[...nextauth].ts` file so that it has our new server.
+
+We need to add this small portion 
+
+```ts
+import NextAuth from "next-auth";
+
+import { authOptions } from "@/lib/auth";
+
+//@ts-ignore
+const handler = NextAuth(authOptions);
+
+export { handler as GET, handler as POST };
+```
+
+We can now test our app to see if it works. Just sign out of the dashboard screen and try logging in. You should be getting a new email in your inbox. If you're using Postmark, you should be able to see the email in your Postmark dashboard.
+
+If you're not recieving the error, try the following
+1. Enable `debug:true` in your `authOptions` variable. This will result in the following authOptions in your `src/lib/auth.ts` file
+
+```ts
+export const authOptions = {
+  providers: [...emailProvider],
+  session: {
+    strategy: "jwt",
+  },
+  debug:true,
+  adapter: PrismaAdapter(prisma),
+};
+```
+
+This will cause `NextAuth` to start printing our error messages.
+
+2. Check your PostMark dashboard. You might be using a sender address that is not configured OR the wrong SMTP keys.
+
+3. Check your `.env` file. You might have forgotten to add the SMTP keys.
+
+Otherwise, let's go on to deploying it on Vercel. You can use any other platform that you like but I prefer using Vercel.
+
+### Deploying to Vercel
+
+Now that we've validated that our email login works, let's deploy the project onto vercel. If you haven't already, create an account on Vercel and link it to your Github account.
+
+Let's configure our email provider so that we send out emails from production and dev environments.
+
+<CodeTitle title = "src/lib/auth.ts" lang="ts" />
+```ts {57}
+import { PrismaAdapter } from "@next-auth/prisma-adapter";
+import { PrismaClient } from "@prisma/client";
+import NextAuth from "next-auth";
+import EmailProvider from "next-auth/providers/email";
+import { Client } from "postmark";
+
+const prisma = new PrismaClient();
+
+const devConfig = EmailProvider({
+  server: {
+    host: process.env.EMAIL_SERVER_HOST,
+    port: process.env.EMAIL_SERVER_PORT,
+    auth: {
+      user: process.env.EMAIL_SERVER_USER,
+      pass: process.env.EMAIL_SERVER_PASSWORD,
+    },
+  },
+  from: process.env.EMAIL_FROM,
+});
+
+const prodConfig = EmailProvider({
+  server: {
+    host: process.env.SMTP_HOST,
+    port: Number(process.env.SMTP_PORT),
+    auth: {
+      user: process.env.SMTP_USER,
+      pass: process.env.SMTP_PASSWORD,
+    },
+  },
+  from: process.env.SMTP_FROM,
+  sendVerificationRequest: async ({ identifier, url, provider }) => {
+    const postmarkClient = new Client(process.env.POSTMARK_API_TOKEN as string);
+
+    const result = await postmarkClient.sendEmailWithTemplate({
+      TemplateId: 31612989,
+      To: identifier,
+      From: process.env.SMTP_FROM as string,
+      TemplateModel: {
+        url,
+      },
+      Headers: [
+        {
+          // Set this to prevent Gmail from threading emails.
+          // See https://stackoverflow.com/questions/23434110/force-emails-not-to-be-grouped-into-conversations/25435722.
+          Name: "X-Entity-Ref-ID",
+          Value: new Date().getTime() + "",
+        },
+      ],
+    });
+
+    if (result.ErrorCode) {
+      throw new Error(result.Message);
+    }
+  },
+});
+
+const emailProvider = process.env.VERCEL_ENV ? [prodConfig] : [devConfig];
+
+export const authOptions = {
+  providers: [...emailProvider],
+  session: {
+    strategy: "jwt",
+  },
+  adapter: PrismaAdapter(prisma),
+};
+
+```
+
+Now push up your repository and add the following environment variables. 
+
+Make sure to copy and paste the following environment variables from your `.env` file into your Vercel environment variables.
+
+```env
+# Prisma Requirement
+DATABASE_URL=
+
+# Next Auth Configuration
+NEXTAUTH_SECRET=
+
+# Prod Mail Box
+POSTMARK_API_TOKEN=
+SMTP_HOST=
+SMTP_PORT=
+SMTP_USER=
+SMTP_PASSWORD=
+SMTP_FROM=
+```
+
+Some important points to note
+
+1. You don't need to set `NEXTAUTH_URL` in your vercel deployment. It's automatically set
+2. Emails will be sent using your baseURL as a prefix and the sign in links will work either way so no need to do any sort of strange configuration.
+

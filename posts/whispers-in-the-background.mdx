@@ -1,6 +1,6 @@
 ---
 title: Whispers In The Background
-date: 2022-05-01
+date: 2023-05-01
 categories:
   - OpenAI
   - ML
@@ -9,7 +9,7 @@ categories:
 description: A first stab at an architecture that allows for transcripts to be generated for user uploads
 ---
 
-<KommyImage blogImage={true} src = "https://user-images.githubusercontent.com/45760326/235455711-4dd33dde-88f9-456f-b5b5-c1c26e638576.png" width = {1000} height = {1000} />
+<KommyImage blogImage={true} src = "https://user-images.githubusercontent.com/45760326/235455711-4dd33dde-88f9-456f-b5b5-c1c26e638576.png" width = {400} height = {400} />
 
 ## Introduction
 
@@ -53,7 +53,7 @@ So how do these variables help to ensure we have a queue?
 
 We can visualise this using a flowchart as seen below 
 
-<KommyImage src = "https://user-images.githubusercontent.com/45760326/235459095-efba6b62-27c9-460c-abfc-09c154a4a4bf.png" blogImage = {true} height = {1000} width = {1000} alt = "Decision Diagram for Server" />
+<KommyImage src = "https://user-images.githubusercontent.com/45760326/235459095-efba6b62-27c9-460c-abfc-09c154a4a4bf.png" blogImage = {true} height = {400} width = {400} alt = "Decision Diagram for Server" />
 
 Each of these jobs will always be completed by adding a cron job down the line which takes all the outstanding files which have been processing for more than a certain amount of time and sends them to be processed.
 

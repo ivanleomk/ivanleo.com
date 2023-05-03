@@ -9,7 +9,7 @@ type Props = {
 const SectionHeader = ({ children = null, title, description = "" }: Props) => {
   return (
     <div>
-      <div className="max-w-2xl mx-5 sm:mx-0">
+      <div className="max-w-3xl mx-5 sm:mx-0">
         <h1 className="text-4xl font-display tracking-tight text-zinc-800 sm:text-5xl">
           {title}
         </h1>

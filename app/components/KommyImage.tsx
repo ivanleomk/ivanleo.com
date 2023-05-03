@@ -33,7 +33,7 @@ export default function KommyImage({
             className
           )}
         />
-        <figcaption
+      <figcaption
           className={clsxm(
             "mx-auto mt-2 max-w-xl text-center text-base italic text-gray-600",
             captionClassName
