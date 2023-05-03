@@ -53,6 +53,7 @@ export default function RootLayout({
                   height={48}
                 />
               </div>
+
               <div className="flex flex-col space-y-1 text-sm leading-none">
                 <a
                   href="https://twitter.com/ivanleomk"
