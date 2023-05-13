@@ -29,7 +29,9 @@ const PostCard = ({ post }: Props) => {
         </p>
         <div className="text-xs my-1 space-x-2">
           {post.parsed_tags
-            .filter((item) => item.name != "Notes")
+            .filter((item: { name: string; slug: string }) => {
+              return item?.name != "Notes";
+            })
             .map((item: { name: string; slug: string }) => {
               return (
                 <Link
