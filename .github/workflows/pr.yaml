@@ -28,5 +28,6 @@ jobs:
           debug: false
           review_simple_changes: false
           review_comment_lgtm: false
-          openai_light_model: gpt-4
-          openai_heavy_model: gpt-4
+          # Need GPT-4 access for this
+          # openai_light_model: gpt-4
+          # openai_heavy_model: gpt-4
