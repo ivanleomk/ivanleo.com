@@ -28,17 +28,21 @@ const PostCard = ({ post }: Props) => {
           {post.description}
         </p>
         <div className="text-xs my-1 space-x-2">
-          {post.parsed_tags.map((item: { name: string; slug: string }) => {
-            return (
-              <Link
-                key={item.slug}
-                href={`category/${item.slug}`}
-                className=" rounded-md bg-gray-200 px-3 py-1.5 font-medium text-gray-600 hover:bg-gray-100"
-              >
-                {item.name}
-              </Link>
-            );
-          })}
+          {post.parsed_tags
+            .filter((item: { name: string; slug: string }) => {
+              return item?.name != "Notes";
+            })
+            .map((item: { name: string; slug: string }) => {
+              return (
+                <Link
+                  key={item.slug}
+                  href={`category/${item.slug}`}
+                  className=" rounded-md bg-gray-200 px-3 py-1.5 font-medium text-gray-600 hover:bg-gray-100"
+                >
+                  {item.name}
+                </Link>
+              );
+            })}
         </div>
       </div>
     </article>

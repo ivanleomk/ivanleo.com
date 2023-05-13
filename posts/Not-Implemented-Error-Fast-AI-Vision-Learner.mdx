@@ -1,0 +1,38 @@
+---
+title: Not Implemented Error
+date: 2023-05-13
+categories:
+  - FastAI
+  - Machine Learning
+description: How to debug a Not Implemented Error in FastAI in lesson 1
+---
+
+This is not a complicated post - just a quick solution. If you're getting an error that looks like this on Paperspace, just use Colab.
+
+The real issue here is not that there is an unimplemented method but that Paperspace itself doesn't allow you to download the resnet18 model. 
+
+```python
+File /usr/local/lib/python3.9/dist-packages/ipywidgets/widgets/trait_types.py:168, in InstanceDict.make_dynamic_default(self)
+    167 def make_dynamic_default(self):
+--> 168     return self.klass(*(self.default_args or ()),
+    169                       **(self.default_kwargs or {}))
+
+File /usr/local/lib/python3.9/dist-packages/ipywidgets/widgets/widget.py:480, in Widget.__init__(self, **kwargs)
+    477 super(Widget, self).__init__(**kwargs)
+    479 Widget._call_widget_constructed(self)
+--> 480 self.open()
+
+File /usr/local/lib/python3.9/dist-packages/ipywidgets/widgets/widget.py:511, in Widget.open(self)
+    507         from ipykernel.comm import Comm
+    509         return Comm(**kwargs)
+--> 511 self.comm = create_comm(**args)
+
+File /usr/local/lib/python3.9/dist-packages/comm/__init__.py:27, in _create_comm(*args, **kwargs)
+     22 def _create_comm(*args, **kwargs):
+     23     """Create a Comm.
+     24 
+     25     This method is intended to be replaced, so that it returns your Comm instance.
+     26     """
+---> 27     raise NotImplementedError("Cannot ")
+``` 
+

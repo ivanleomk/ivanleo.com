@@ -18,8 +18,8 @@ const Tweet = ({ data }: Props) => {
       rel="noopener noreferrer"
       className="no-underline"
     >
-      <div className="relative py-3 sm:max-w-xl sm:mx-auto ">
-        <div className="rounded-lg border border-gray-300 px-6 py-2 w-full">
+      <div className="relative sm:max-w-xl sm:mx-auto py-10 ">
+        <div className="rounded-lg border border-gray-300 px-6 py-10 w-full">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-2">
               <img

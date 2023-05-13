@@ -74,6 +74,9 @@ export default function RootLayout({
               <Link href="/posts" className="text-sm hover:font-semibold">
                 Posts
               </Link>
+              <Link href="/notes" className="text-sm hover:font-semibold">
+                Notes
+              </Link>
               <Link href="/work_log" className="text-sm hover:font-semibold">
                 Work Log
               </Link>
