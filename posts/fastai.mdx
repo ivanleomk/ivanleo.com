@@ -1,0 +1,93 @@
+---
+title: Notes on Fast AI
+date: 2023-02-28
+categories:
+  - FastAI
+  - Machine Learning
+  - Notes
+description: Here are some of my notes for Fast AI part 1. I'm going through the course and the book and I'm trying to consolidate everything here.
+---
+
+<Callout>
+Fast AI is a free course designed for people with some coding experience, who want to learn how to apply deep learning and machine learning to practical problems. <br /><br />These are the notes for Part 1 of the course which can be found [here](https://course.fast.ai/)
+</Callout>
+
+I ended up re-reading the book after going through sections of the course and so I thought I would try to consolidate everything here.
+
+## Neural Networks
+
+> Relevant Portions: [Video 1](https://www.youtube.com/watch?v=8SF_h3xF3cE), [Chapter 1](https://github.com/fastai/fastbook/blob/master/01_intro.ipynb)
+
+Neural Networks are fundamentally mathematical functions - they take in some input and spit out some output. 
+
+<KommyImage blogImage={true} src = "https://pbs.twimg.com/media/FtuMEGpacAAOIil?format=png&name=medium" height = {400} width = {400} />
+
+<StaticTweet id="1647063793200160768" />
+
+We use an objective function - often called a loss function to determine the quality of our mode's predictions. This then allows us to fine tune the parameters of our model.
+
+Important vocabulary to know of is 
+- The functional form of the model is called its architecture
+- The weights are called parameters
+- The predictions are calculated from the independent variables
+- The results of the models are called predictions
+- The measure of performance is called the loss
+- Loss depends on the predictions but also the correct label
+
+Ideally, we want to use a pretrained model when working with a new machine learning problem. This is because our model comes out of the box with certain abilities - eg. ability to recognise edges. 
+
+The Fast.AI vision learner for instance will always remove the last layer of the pretrained model and replace it with a new layer that has randomized weights. This is because the last layer of the model is the one that is most specific to the task at hand.
+
+When working with a model, we want to make sure that we have a validation set. This is a set of data that we don't train our model on. This is important because we want to make sure that our model is able to generalise to data that it hasn't seen before. This helps to prevent overfitting.
+
+
+## Deployment
+
+Deep Learning is a useful method for dealing with problems without a clear solution. Often times, computers are able to find patterns much better than humans can.
+
+Some examples of areas where deep learning has been applied are
+- Computer vision
+- Natural Language Processing
+- Recomender Systems
+
+Always build an end to end pipline before starting on a deep dive and optimisation of a specific component. 
+
+
+
+
+
+
+When training a new model, what's most important is to look at the data. There's no need to look towards fancy model architectures before you extract the maximum amount of alpha from your data.
+
+<StaticTweet id="1647275727182770176" />
+
+For instance, Jeremy recommends using the `resnet-18` model as a baseline since it's quick, fast and easy to train.
+
+We can also perform data augmentation - which is a fancy way of saying that we modify our data to either increase the number of samples or to make our model more robust to changes in the data.
+
+Potential ways to do so are
+- Random Resizing
+- Random Crops
+- Rotations
+
+It's important here to make sure that our model will always take in input of a specific size (resolution if you're using images) so make sure u add a rescale step.
+
+
+
+{/* ## Lesson 3
+
+In lesson 3, we built a neural network from scratch. That's pretty dope. Ultimately
+
+- Machine learning models are infintely flexible euqations
+- We adjust the different parameters that our equations are using to determine the best fit for our data. These are parameters such as the number of epochs, the learning rate etc.
+
+
+## Lesson 6
+
+In Lesson 6, we learnt about what a random forest is. This was rather interesting to me since I hadn't seen an example of what a random forest looked like. I had only heard of it in passing.
+
+
+
+# Book
+
+The book seems to be a bit older than the course and the content is structured a bit differently too. I figured I'd do both and split the notes I took into two separate sections. */}
