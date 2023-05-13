@@ -16,7 +16,7 @@ I ended up re-reading the book after going through sections of the course and so
 
 ## Neural Networks
 
-> Relevant Portions: [Video 1](https://www.youtube.com/watch?v=8SF_h3xF3cE), [Chapter 1](https://github.com/fastai/fastbook/blob/master/01_intro.ipynb)
+> Relevant Portions: [Video 1](https://www.youtube.com/watch?v=8SF_h3xF3cE), [Chapter 1](https://github.com/fastai/fastbook/blob/master/01_intro.ipynb), 
 
 Neural Networks are fundamentally mathematical functions - they take in some input and spit out some output. 
 
@@ -40,8 +40,26 @@ The Fast.AI vision learner for instance will always remove the last layer of the
 
 When working with a model, we want to make sure that we have a validation set. This is a set of data that we don't train our model on. This is important because we want to make sure that our model is able to generalise to data that it hasn't seen before. This helps to prevent overfitting.
 
+### Mechanism
+
+> Relevant Portions : [Chapter 4](https://github.com/fastai/fastbook/blob/master/04_mnist_basics.ipynb) 
+
+Neural networks work by starting with a series of randomized weights and then using the gradient of the predictions to adjust the weights. This is called gradient descent.
+
+<KommyImage blogImage = {true} src = "https://github.com/ivanleomk/personal_website_v3/assets/45760326/9d11bae7-b4e1-46c5-b724-46cee702a369" height = "400" width = "400" alt = "Learning Rate Image" />
+
+We then adjust the weights by a set scaled amount of the actual gradient. This is known as the learning rate. 
+
+<Callout>
+Choosing the right learning rate is very important! If we choose one that's too small, we'll never be able to reach a good equilibrium. If we choose one that's too big, we'll just end up bouncing around.
+</Callout>
+
+We measure the quality of our prediction using a loss function. It's important here to choose the right loss function. **This needs to be a reasonably smooth function without big flat sections and large jumps**. This is because we want to be able to use the gradient of the loss function to adjust our weights.
+
 
 ## Deployment
+
+> Relevant Portions : 
 
 Deep Learning is a useful method for dealing with problems without a clear solution. Often times, computers are able to find patterns much better than humans can.
 
@@ -51,10 +69,6 @@ Some examples of areas where deep learning has been applied are
 - Recomender Systems
 
 Always build an end to end pipline before starting on a deep dive and optimisation of a specific component. 
-
-
-
-
 
 
 When training a new model, what's most important is to look at the data. There's no need to look towards fancy model architectures before you extract the maximum amount of alpha from your data.
@@ -72,22 +86,18 @@ Potential ways to do so are
 
 It's important here to make sure that our model will always take in input of a specific size (resolution if you're using images) so make sure u add a rescale step.
 
+### Ethics
+> Relevant Portions : [Chapter 3](https://github.com/fastai/fastbook/blob/master/03_ethics.ipynb)
+
+Because deep learning is such a powerful tool and can be used for so many things, it becomes particularly important that we consider the consequences of our choices. The philosophical study of ethics is the study of right and wrong, including how we can define those terms, recognize right and wrong actions, and understand the connection between actions and consequences.
+
+Some examples of where deep learning has had unintended consequences are 
+1. Feedback Loops - when youtube's recomendation engine helped to create curated playlists for pedophiles.
+2. Bias - when google's ad engine displayed ads for criminal background checks when a traditionally african american name was searched for.
 
 
-{/* ## Lesson 3
-
-In lesson 3, we built a neural network from scratch. That's pretty dope. Ultimately
-
-- Machine learning models are infintely flexible euqations
-- We adjust the different parameters that our equations are using to determine the best fit for our data. These are parameters such as the number of epochs, the learning rate etc.
+<Callout>
+Any dataset involving humans can have this kind of bias: medical data, sales data, housing data, political data, and so on. Because underlying bias is so pervasive, bias in datasets is very pervasive
+</Callout>
 
 
-## Lesson 6
-
-In Lesson 6, we learnt about what a random forest is. This was rather interesting to me since I hadn't seen an example of what a random forest looked like. I had only heard of it in passing.
-
-
-
-# Book
-
-The book seems to be a bit older than the course and the content is structured a bit differently too. I figured I'd do both and split the notes I took into two separate sections. */}
