@@ -128,9 +128,7 @@ const BlogPage = async ({ params }: { params: Params }) => {
       </div>
       <hr className="my-8 border-slate-200 w-40 mx-auto" />
       <div className="flex flex-col items-center justify-start lg:flex-row lg:items-start lg:justify-between">
-        <div className="max-w-md">
-          <TableOfContents source={post.body.raw} />
-        </div>
+        <TableOfContents source={post.body.raw} />
 
         <article className="max-w-full px-4 pb-8 text-dark lg:max-w-2xl">
           <Content components={{ ...CodeBlocks, StaticTweet }} />

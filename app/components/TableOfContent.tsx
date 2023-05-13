@@ -73,17 +73,35 @@ const TableOfContents = ({ source }: TOCProps) => {
     .split("\n")
     .filter((line) => line.match(/^###*\s/));
 
-  const headings = headingLines.map((raw) => {
-    const text = raw.replace(/^###*\s/, "");
-    const level = raw.slice(0, 3) === "###" ? 3 : 2;
-    const slugger = new GithubSlugger();
+  const generateSpacing = (level: 1 | 2 | 3 | 4) => {
+    switch (level) {
+      case 1:
+      case 2:
+        return "pl-2";
+      case 3:
+        return "pl-4";
+      case 4:
+        return "pl-6";
+    }
+  };
 
-    return {
-      text,
-      level,
-      id: slugger.slug(text),
-    };
-  });
+  const headings = headingLines
+    .map((raw) => {
+      const text = raw.replace(/^###*\s/, "");
+
+      const level = raw.match(/^###*\s/)?.at(0)?.length ?? 0;
+
+      const slugger = new GithubSlugger();
+
+      return {
+        text,
+        level,
+        id: slugger.slug(text.trim()),
+      };
+    })
+    .filter((item) => {
+      return item.level <= 4;
+    });
 
   const [activeId, setActiveId] = useState<string>();
 
@@ -128,14 +146,15 @@ const TableOfContents = ({ source }: TOCProps) => {
                     href={`#${heading.id}`}
                     className={clsxm(
                       heading.id === activeId ? "font-bold" : "font-normal",
-                      heading.level === 2 ? "pl-2" : "pl-6",
+                      generateSpacing(heading.level as 1 | 2 | 3 | 4),
                       "mb-4 text-base text-slate-700 last:mb-6 hover:underline"
                     )}
                     onClick={(e) => {
                       e.preventDefault();
+                      console.log(heading.id);
                       document
                         .querySelector<any>(`#${heading.id}`)
-                        .scrollIntoView({
+                        ?.scrollIntoView({
                           behavior: "smooth",
                           block: "start",
                           inline: "nearest",

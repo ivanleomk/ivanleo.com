@@ -7,6 +7,10 @@ module.exports = withContentlayer({
       { protocol: "https", hostname: "pbs.twimg.com" },
       { protocol: "https", hostname: "abs.twimg.com" },
       { protocol: "https", hostname: "user-images.githubusercontent.com" },
+      {
+        protocol: "https",
+        hostname: "github.com",
+      },
     ],
   },
 });
