@@ -12,15 +12,15 @@ export async function GET(request: Request) {
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
   <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"> 
   <url>
-    <loc>http://${BASE_URL}/</loc>
+    <loc>${BASE_URL}/</loc>
     <lastmod>${new Date().toISOString()}</lastmod>
   </url>
   <url>
-    <loc>http://${BASE_URL}/posts</loc>
+    <loc>${BASE_URL}/posts</loc>
     <lastmod>${new Date().toISOString()}</lastmod>
   </url>
   <url>
-    <loc>http://${BASE_URL}/notes/</loc>
+    <loc>${BASE_URL}/notes/</loc>
     <lastmod>${new Date().toISOString()}</lastmod>
   </url>
   ${allPosts.map((post) => {
