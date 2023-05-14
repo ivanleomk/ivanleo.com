@@ -13,4 +13,12 @@ module.exports = withContentlayer({
       },
     ],
   },
+  async rewrites() {
+    return [
+      {
+        source: "/sitemap.xml",
+        destination: "/api/sitemap",
+      },
+    ];
+  },
 });
