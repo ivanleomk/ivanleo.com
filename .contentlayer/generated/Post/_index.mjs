@@ -7,5 +7,7 @@ import deployingADockerContainerOnAzureMdx from './deploying-a-docker-container-
 import fastaiMdx from './fastai.mdx.json' assert { type: 'json' }
 import usingCloudflareWorkersInNextjsMdx from './using-cloudflare-workers-in-nextjs.mdx.json' assert { type: 'json' }
 import whispersInTheBackgroundMdx from './whispers-in-the-background.mdx.json' assert { type: 'json' }
+import machineLearningRoadmapMdx from './machine-learning-roadmap.mdx.json' assert { type: 'json' }
+import neuralNetworksFromScratchMdx from './neural-networks-from-scratch.mdx.json' assert { type: 'json' }
 
-export const allPosts = [notImplementedErrorFastAiVisionLearnerMdx, clickMeMdx, configuringNextAuthWithNextjsMdx, deployingADockerContainerOnAzureMdx, fastaiMdx, usingCloudflareWorkersInNextjsMdx, whispersInTheBackgroundMdx]
+export const allPosts = [notImplementedErrorFastAiVisionLearnerMdx, clickMeMdx, configuringNextAuthWithNextjsMdx, deployingADockerContainerOnAzureMdx, fastaiMdx, usingCloudflareWorkersInNextjsMdx, whispersInTheBackgroundMdx, machineLearningRoadmapMdx, neuralNetworksFromScratchMdx]

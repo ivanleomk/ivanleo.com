@@ -1,0 +1,91 @@
+---
+title: Notes on Neural Networks From Scratch
+date: 2023-02-28
+categories:
+  - Neural Networks From Scratch
+  - Machine Learning
+  - Notes
+description: Here are some of my notes for Neural Networks From Scratch
+---
+
+## Introduction
+
+> You can check out the book at [Neural Networks From Scratch](https://nnfs.io/)
+
+It's a guide as to how you can build your own neural networks and in turn hopefully gain a deeper understanding of how these things work under the hood
+
+Neural Networks are a new kind of architecture. They work by using multiple layers of neurons - anything that has at least 2 hidden layers ( layers not include the input and output) are considered deep neural networks.
+
+In order to train our neural networks we need data. A single data point is called a feature - this is just a single value. A group of related data points (Eg. if we were looking at a dataset on applies - a group of related data might be the weight, color, size, etc.) is called a feature set. 
+
+A collection of feature sets is called a dataset.
+
+Our neural network then takes in these feature sets and outputs a prediction. During the training step, if all of our feature sets are labelled with a corresponding expected prediction - it's called supervised machine learning. Otherwise it's known as unsupervised machine learning. We also have a nice-in between whereby we have a portion of the datasets listed as supervised and the rest unsupervised. This is semi-supervised machine learning 
+
+## Concepts 
+
+### Training
+
+Typically when we train our model, we try to avoid overfitting. This happens when our model memorises the training data and is unable to be generalised to new data. We get around this by using a validation set - which contains data that is not contained within the training set. 
+
+We then use a loss function - which takes our predicted output and the actual output and calculates a value that expresses the quality of the preediction. This then helps us to update the weights w.r.t a learning rate.
+
+We also train our model in batches - so that we can ensure that our model makes adjustments based on the average of the individual predictions used AND to speed up training speed.
+
+### Neurons
+
+> Notebook : [Creating a Neuron](https://colab.research.google.com/drive/16-MJaKroHEb2dl2oHbPdKwDn5KjN4l3G?usp=sharing)
+
+A neuron is the basic building block of a neural network - it takes in some degree of input and then spits out a corresponding output. It calculates the output by multiplying each portion of the input by a corresponding weight and adding a bias to the term. An example could be 
+
+```python
+inputs = [1,2,3]
+
+weights = [3,4,5]
+
+bias = 3
+```
+
+Then we would have the output of 
+
+```python
+1 * 3 + 2 * 4 + 3 * 5 + 3 = 29
+```
+
+Our inputs are normally normalised and scaled, with each value being reduced to being between `-1 <= x <= 1`. This is done to make sure that the values are all on the same scale and that the model doesn't get confused by the values.
+
+### Layers
+
+Typically we arrange neurons in a network in layers. The first layer is the input layer, the last layer is the output layer and all the layers in between are hidden layers.
+
+We can represent a neural network layer with three neurons as  
+
+```python
+inputs = [1.0,2.0,3.0,2.5]
+
+weights = [
+    [0.2, 0.8, -0.5, 1.0],
+    [0.5, -0.91, 0.26, -0.5],
+    [-0.26, -0.27, 0.17, 0.87]
+]
+bias = [2,3,0.5]
+```
+
+We can then calculate the output of the layer by 
+
+```python
+layer_outputs = np.dot(inputs,np.array(weights).T) + bias
+```
+
+The intuition here is that we are using the matrix product. At the end of the day, we end up with a n x m matrix where n is the number of inputs and m is the number of weights that each neuron posseses in the layer ( assuming that each of the neurons have the same number of weights ).
+
+
+<Callout>
+In more complex neural network architectures, such as convolutional neural networks (CNNs) or recurrent neural networks (RNNs), neurons may have different numbers of weights depending on their role in the network. 
+</Callout>
+
+We can mock up a neural network with 2 layers as 
+
+```python
+
+```

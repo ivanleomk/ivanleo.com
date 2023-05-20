@@ -40,6 +40,8 @@ The Fast.AI vision learner for instance will always remove the last layer of the
 
 When working with a model, we want to make sure that we have a validation set. This is a set of data that we don't train our model on. This is important because we want to make sure that our model is able to generalise to data that it hasn't seen before. This helps to prevent overfitting.
 
+## Training Models
+
 ### Mechanism
 
 > Relevant Portions : [Chapter 4](https://github.com/fastai/fastbook/blob/master/04_mnist_basics.ipynb) 
@@ -56,7 +58,64 @@ Choosing the right learning rate is very important! If we choose one that's too 
 
 We measure the quality of our prediction using a loss function. It's important here to choose the right loss function. **This needs to be a reasonably smooth function without big flat sections and large jumps**. This is because we want to be able to use the gradient of the loss function to adjust our weights.
 
-Often times, we'll be working with large datasets. So we perform this optimisation in minibatches - whereby we operate on portions of our data set and 
+Often times, we'll be working with large datasets. So we perform this optimisation in minibatches - whereby we operate on portions of our data set at a time. This is because it's much faster to calculate the gradient of a minibatch than it is to calculate the gradient of the entire dataset.
+
+### Multi-Type Models 
+
+> Relevant Portions : [Multi-Target: Road to The Top p4](https://www.kaggle.com/code/jhoward/multi-target-road-to-the-top-part-4)
+
+We can improve the quality of our predictions by using multi-type models. These are models that are able to calculate predictions for multiple dependent variables
+
+```sql
+                      +--------------+
+                      |    Model     |
+                      +--------------+
+                              |
+                    +-------------------+
+                    |   Shared Layer    |
+                    +-------------------+
+                              |
+                    +-------------------+
+                    |  Final Prediction |
+                    +-------------------+
+```
+
+The Fast AI example was one whereby we output a 20 element vector where the first 10 corresponded to the disease type and the next 10 corresponded to the variety type.
+
+### TTA ( Test-Time Augmentation )
+
+> Relevant Portions : [Race to the Top Part 2](https://www.kaggle.com/code/jhoward/small-models-road-to-the-top-part-2) which shows an example of TTA.
+
+Test Time Augmentation refers to the process of making predictions on multiple versions of our data and then averaging the results. This is because we want to make sure that our model is robust to changes in the data.
+
+## Overfitting
+
+There are a variety of different issues when training models chief of which is overfitting. This happens when our model memorises the data that it has seen in its training set and is unable to generalise to new data. We can observe this sometimes when the loss in our training set decreases but we have no noticable difference in our validation set. There are a couple of ways to avoid this.
+
+### Data Augmentation
+
+We can modify our data to increase the number of samples or make our model more robust to changes in the data. 
+
+Potential ways to do so are
+- Random Resizing
+- Random Crops
+- Rotations
+
+Always build an end to end pipline before starting on a deep dive and optimisation of a specific component. When training a new model, what's most important is to look at the data. There's no need to look towards fancy model architectures before you extract the maximum amount of alpha from your data. For instance, Jeremy recommends using the `resnet-18` model as a baseline since it's quick, fast and easy to train.
+
+<b>It's important here to make sure that our model will always take in input of a specific size (resolution if you're using images) so make sure u add a rescale step.</b>
+
+### Weight Decay
+
+> Relevant Portions: [Collaborative Filtering Deep Dive](https://www.kaggle.com/code/jhoward/collaborative-filtering-deep-dive/notebook)
+
+Weight Decay involves modifying our loss function to penalise large weights. This is because large weights are often a sign of overfitting. We can do so by adding the sum of the square of each of our weights. This can be expressed as 
+
+```python
+loss=loss + wd*(weights**2).sum()
+```
+
+where `wd`is the weight decay hyperparameter that controls the extent of penalisation of large weights.
 
 ## Deployment
 
@@ -69,25 +128,7 @@ Some examples of areas where deep learning has been applied are
 - Natural Language Processing
 - Recomender Systems
 
-Always build an end to end pipline before starting on a deep dive and optimisation of a specific component. 
-
-
-When training a new model, what's most important is to look at the data. There's no need to look towards fancy model architectures before you extract the maximum amount of alpha from your data.
-
-<StaticTweet id="1647275727182770176" />
-
-For instance, Jeremy recommends using the `resnet-18` model as a baseline since it's quick, fast and easy to train.
-
-We can also perform data augmentation - which is a fancy way of saying that we modify our data to either increase the number of samples or to make our model more robust to changes in the data.
-
-Potential ways to do so are
-- Random Resizing
-- Random Crops
-- Rotations
-
-It's important here to make sure that our model will always take in input of a specific size (resolution if you're using images) so make sure u add a rescale step.
-
-### Ethics
+## Ethics
 > Relevant Portions : [Chapter 3](https://github.com/fastai/fastbook/blob/master/03_ethics.ipynb)
 
 Because deep learning is such a powerful tool and can be used for so many things, it becomes particularly important that we consider the consequences of our choices. The philosophical study of ethics is the study of right and wrong, including how we can define those terms, recognize right and wrong actions, and understand the connection between actions and consequences.
