@@ -79,9 +79,9 @@ const TableOfContents = ({ source }: TOCProps) => {
       case 2:
         return "pl-2";
       case 3:
-        return "pl-4";
-      case 4:
         return "pl-6";
+      case 4:
+        return "pl-10";
     }
   };
 
@@ -108,10 +108,10 @@ const TableOfContents = ({ source }: TOCProps) => {
   useIntersectionObserver(setActiveId);
 
   return (
-    <div className="w-full mt-4 mb-0 lg:mr-10 cursor-pointer lg:sticky lg:top-20 lg:border-b-2 lg:border-dark">
+    <div className="w-full mt-4 mb-0 lg:mr-10 cursor-pointer lg:sticky lg:top-20 lg:border-b-2 lg:border-dark max-w-md">
       <Disclosure
         as="div"
-        className="flex flex-col items-center justify-center"
+        className="flex flex-col items-start justify-center"
         defaultOpen={true}
       >
         {({ open }) => (
