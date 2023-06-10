@@ -1,6 +1,6 @@
 import { allPosts } from "@/.contentlayer/generated";
 
-const BASE_URL = "http://www.ivanleo.com";
+const BASE_URL = "https://www.ivanleo.com";
 
 export async function GET(request: Request) {
   request.headers.set("Cache-Control", "public, max-age=3600");
