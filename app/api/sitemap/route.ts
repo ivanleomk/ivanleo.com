@@ -1,14 +1,15 @@
 import { allPosts } from "@/.contentlayer/generated";
+import xmlFormat from "xml-formatter";
 
-const BASE_URL = "https://www.ivanleo.com";
+const BASE_URL = "https://ivanleo.com";
 
 export async function GET(request: Request) {
   request.headers.set("Cache-Control", "public, max-age=3600");
   request.headers.set("Content-Type", "text/xml");
 
   const categorySet = Array.from(
-    new Set(allPosts.flatMap((item) => item.categories))
-  );
+    new Set(allPosts.flatMap((item) => item.parsed_tags))
+  ).map((item) => item.slug);
 
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
   <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"> 
@@ -35,5 +36,5 @@ export async function GET(request: Request) {
     .join("")
     .trim()}\n</urlset>`;
 
-  return new Response(xml);
+  return new Response(xmlFormat(xml));
 }
