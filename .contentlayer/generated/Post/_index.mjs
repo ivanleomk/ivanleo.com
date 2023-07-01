@@ -4,6 +4,7 @@ import notImplementedErrorFastAiVisionLearnerMdx from './Not-Implemented-Error-F
 import buildingALocalChatgptCloneFromScratchMdx from './building-a-local-chatgpt-clone-from-scratch.mdx.json' assert { type: 'json' }
 import clickMeMdx from './click-me.mdx.json' assert { type: 'json' }
 import configuringNextAuthWithNextjsMdx from './configuring-next-auth-with-nextjs.mdx.json' assert { type: 'json' }
+import crawlingGoogleMapsSavedListMdx from './crawling-google-maps-saved-list.mdx.json' assert { type: 'json' }
 import deployingADockerContainerOnAzureMdx from './deploying-a-docker-container-on-azure.mdx.json' assert { type: 'json' }
 import fastaiMdx from './fastai.mdx.json' assert { type: 'json' }
 import machineLearningRoadmapMdx from './machine-learning-roadmap.mdx.json' assert { type: 'json' }
@@ -11,4 +12,4 @@ import neuralNetworksFromScratchMdx from './neural-networks-from-scratch.mdx.jso
 import usingCloudflareWorkersInNextjsMdx from './using-cloudflare-workers-in-nextjs.mdx.json' assert { type: 'json' }
 import whispersInTheBackgroundMdx from './whispers-in-the-background.mdx.json' assert { type: 'json' }
 
-export const allPosts = [notImplementedErrorFastAiVisionLearnerMdx, buildingALocalChatgptCloneFromScratchMdx, clickMeMdx, configuringNextAuthWithNextjsMdx, deployingADockerContainerOnAzureMdx, fastaiMdx, machineLearningRoadmapMdx, neuralNetworksFromScratchMdx, usingCloudflareWorkersInNextjsMdx, whispersInTheBackgroundMdx]
+export const allPosts = [notImplementedErrorFastAiVisionLearnerMdx, buildingALocalChatgptCloneFromScratchMdx, clickMeMdx, configuringNextAuthWithNextjsMdx, crawlingGoogleMapsSavedListMdx, deployingADockerContainerOnAzureMdx, fastaiMdx, machineLearningRoadmapMdx, neuralNetworksFromScratchMdx, usingCloudflareWorkersInNextjsMdx, whispersInTheBackgroundMdx]

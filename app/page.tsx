@@ -16,19 +16,15 @@ export default function Home() {
       <div className="my-10 ">
         <SectionHeader title="" description="About Me" />
         <p className="text-sm leading-6 px-4 mt-4">
-          I&apos;m a software engineer based in Singapore, currently working on
-          building out a GPT-powered CRM for sales teams as part of Buildspace
-          S3. I&apos;m interested in a variety of different areas - including
-          web3, Generative AI and most recently gardening.{" "}
+          I&apos;m a software engineer based in Singapore. I&apos;m interested
+          in a variety of different areas - including web3, Generative AI and
+          most recently gardening.{" "}
         </p>
 
         <p className="mt-2 text-sm leading-6 px-4">
           You can find out more about me via my writings, projects and other
           social media accounts. Feel free to drop me a dm @ivanleomk on twitter
           for any collaboration, inquiries or more.
-        </p>
-        <p className="mt-2 text-sm leading-6 px-4">
-          As you can probably tell, this website is still a work in progress.
         </p>
 
         <hr className="my-8 border-slate-200 w-40 mx-auto" />
