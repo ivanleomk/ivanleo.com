@@ -10,5 +10,6 @@ import machineLearningRoadmapMdx from './machine-learning-roadmap.mdx.json' asse
 import neuralNetworksFromScratchMdx from './neural-networks-from-scratch.mdx.json' assert { type: 'json' }
 import usingCloudflareWorkersInNextjsMdx from './using-cloudflare-workers-in-nextjs.mdx.json' assert { type: 'json' }
 import whispersInTheBackgroundMdx from './whispers-in-the-background.mdx.json' assert { type: 'json' }
+import crawlingGoogleMapsSavedListMdx from './crawling-google-maps-saved-list.mdx.json' assert { type: 'json' }
 
-export const allPosts = [notImplementedErrorFastAiVisionLearnerMdx, buildingALocalChatgptCloneFromScratchMdx, clickMeMdx, configuringNextAuthWithNextjsMdx, deployingADockerContainerOnAzureMdx, fastaiMdx, machineLearningRoadmapMdx, neuralNetworksFromScratchMdx, usingCloudflareWorkersInNextjsMdx, whispersInTheBackgroundMdx]
+export const allPosts = [notImplementedErrorFastAiVisionLearnerMdx, buildingALocalChatgptCloneFromScratchMdx, clickMeMdx, configuringNextAuthWithNextjsMdx, deployingADockerContainerOnAzureMdx, fastaiMdx, machineLearningRoadmapMdx, neuralNetworksFromScratchMdx, usingCloudflareWorkersInNextjsMdx, whispersInTheBackgroundMdx, crawlingGoogleMapsSavedListMdx]
