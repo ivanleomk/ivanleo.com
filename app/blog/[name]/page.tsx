@@ -127,11 +127,13 @@ const BlogPage = async ({ params }: { params: Params }) => {
         <p className="text-xs text-slate-600">{post.description}</p>
       </div>
       <hr className="my-8 border-slate-200 w-40 mx-auto" />
-      <div className="flex flex-col items-center justify-start lg:flex-row lg:items-start lg:justify-between">
-        <article className="max-w-full px-4 pb-8 text-dark lg:max-w-xl">
+      <div className="flex flex-col lg:flex-row">
+        <div className="mx-4 order-1 lg:order-2">
+          <TableOfContents source={post.body.raw} />
+        </div>
+        <article className="max-w-full px-4 pb-8 text-dark lg:max-w-xl order-2 lg:order-1">
           <Content components={{ ...CodeBlocks, StaticTweet }} />
         </article>
-        <TableOfContents source={post.body.raw} />
       </div>
     </div>
   );

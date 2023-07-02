@@ -108,7 +108,7 @@ const TableOfContents = ({ source }: TOCProps) => {
   useIntersectionObserver(setActiveId);
 
   return (
-    <div className="w-full mt-4 mb-0 lg:mr-10 cursor-pointer lg:sticky lg:top-20 lg:border-b-2 lg:border-dark max-w-md">
+    <div className="w-full mt-4 mb-0 lg:mr-10 cursor-pointer lg:sticky lg:top-20 lg:border-b-2 lg:border-dark max-w-md max-h-[80vh] overflow-y-auto">
       <Disclosure
         as="div"
         className="flex flex-col items-start justify-center"
@@ -137,7 +137,7 @@ const TableOfContents = ({ source }: TOCProps) => {
             </dt>
             <Disclosure.Panel
               as="dd"
-              className="flex flex-col items-start justify-start"
+              className="flex flex-col items-start justify-start "
             >
               {headings.map((heading, index) => {
                 return (
