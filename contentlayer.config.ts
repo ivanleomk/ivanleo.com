@@ -5,6 +5,7 @@ import rehypePrettyCode from "rehype-pretty-code";
 import { rehypeAccessibleEmojis } from "rehype-accessible-emojis";
 import rehypeAutolinkHeadings from "rehype-autolink-headings";
 import rehypeSlug from "rehype-slug";
+import remarkGfm from "remark-gfm";
 
 function processString(inputString: string) {
   const escapedString = inputString
@@ -80,6 +81,7 @@ export default makeSource({
   documentTypes: [Post],
   mdx: {
     rehypePlugins: [
+      remarkGfm,
       rehypeAccessibleEmojis,
       rehypeSlug,
       [
