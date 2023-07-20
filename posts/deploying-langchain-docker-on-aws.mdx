@@ -1,0 +1,1137 @@
+---
+title: CI/CD with Langchain AWS Lambda using Docker Image
+date: 2023-07-14
+categories:
+  - Dev Ops
+  - AWS Lambda
+  - AWS CDK
+  - Langchain
+description: Using AWS Lambda with Langchain is hard - but not impossible. This article will show you how to use Docker to build a Lambda compatible image and deploy it to AWS with a staging and prod environment setup.
+---
+
+## Introduction
+
+Working with AWS lambda is hard - there's a whole lot of layers that you need to work with and permissions that you need to set up. This article will show you how to use Docker to build a Lambda compatible image and deploy it to AWS with a staging and prod environment setup.
+
+It's important to note here that you don't have to use langchain for this to work - you can use any package as long as it can be installed with pip and the resulting file can be copied into the lambda image.
+
+> **Please create a non-root account to run these commands**. This is because we're going to be using the AWS CLI and we don't want to accidentally deploy things to your root account.
+
+
+
+## Setting up the project
+
+### Configuring AWS CLI
+
+You'll need to make sure that you configure the right credentials so you don't deploy things to the wrong account. Let's first generate some credentials that map to our default IAM user.
+
+First, you need to navigate to the IAM user screen and select the user that you want to use to deploy your lambda function. You then need to select the `security-credentials` tab. This should give you a screen that looks something like this.
+
+<KommyImage height = {400} width={400} src = "/images/iam-credentials.png" blogImage={true} />
+
+You'll then want to scroll down until you see a section named `Access Keys` as seen below. 
+
+<KommyImage height = {400} width={400} src = "/images/access-key-section.png" blogImage={true} />
+
+Click on the `Create Access Key` button. In this case, we're using this access key locally so go ahead and select the `Command Line Interface` option and click `Next`.
+
+<KommyImage height = {400} width={400} src = "/images/acess-key-cli.png" blogImage={true} />
+
+This should give you two values - an `Access Key ID` and a `Secret Access Key`. Let's configure out AWS cli so that it know that we're using this for our deployment.
+
+```bash
+> aws configure --profile [profileName]
+AWS Access Key ID [None]: ********
+AWS Secret Access Key [None]: ********
+Default region name [None]: ********
+Default output format [None]:
+```
+
+> If you don't have the AWS cli installed, you can install it by following the instructions [here](https://docs.aws.amazon.com/cli/latest/userguide/install-cliv2.html)
+
+
+### Configuring CDK 
+
+You can create a new CDK project by running the following command 
+
+```bash
+npx cdk init app --language typescript
+```
+
+Make sure that you have the following dependencies installed 
+
+```bash
+"aws-cdk-lib": "2.87.0",
+"constructs": "^10.0.0",
+"source-map-support": "^0.5.21"
+```
+
+You can then make sure they're installed by running `npm install`. 
+
+We want to have two separate config files for our prod and staging configurations. In order to do this, we need to create two separate files in the `bin` folder called `prod.config.ts` and `staging.config.ts`. For now, we're just going to use these files to store the environment name. This will be used down the line to validate that we've got the right deployments on each end.
+
+```ts
+export const prodConfig = {
+  environment: "prod",
+};
+```
+
+```ts
+export const stagingConfig = {
+  environment: "staging",
+};
+```
+
+Let's now create a new file called `embed-lambda-function-stack.ts` in our `lib` folder so that we can define the dependencies for our lambda function.
+
+<CodeTitle lang = "ts" title = "/lib/embed-lambda-function-stack.ts" />
+```ts
+import { Construct } from 'constructs';
+import * as cdk from "aws-cdk-lib";
+import { aws_lambda as lambda } from "aws-cdk-lib";
+import { aws_apigateway as apigateway } from "aws-cdk-lib";
+import * as path from "path";
+
+interface EmbedLambdaFunctionStackProps extends cdk.StackProps {
+  config: {
+    environment: string;
+  };
+}
+
+export class EmbedLambdaFunctionStack extends cdk.Stack {
+  constructor(scope: Construct , id: string, props: EmbedLambdaFunctionStackProps) {
+    super(scope, id, props);
+
+    const { config } = props;
+
+    // Create the Lambda function
+    const embedFileFunction = new lambda.DockerImageFunction(this, "embedFileFunction", {
+      functionName: `${config.environment}-embed-lambda`,
+      code: lambda.DockerImageCode.fromImageAsset(path.join(__dirname, "../src")),
+      environment: {
+        ENVIRONMENT: config.environment,
+        OPENAI_API_KEY: config.openai_key,
+      },
+      timeout: cdk.Duration.seconds(300),
+      memorySize: 512
+    });
+
+    // Create the API Gateway
+    const api = new apigateway.RestApi(this, "MyApiGateway");
+
+    // Add the desired path to the API Gateway
+    const embedFileResource = api.root.addResource("embed-file");
+    // Add the POST method to the embed-file resource
+    embedFileResource.addMethod("POST", new apigateway.LambdaIntegration(embedFileFunction));
+
+    // Add the POST method to the embed-file resource
+    embedFileResource.addMethod("POST", new apigateway.LambdaIntegration(embedFileFunction));
+  }
+}
+```
+
+Some things to note here 
+
+1. We've defined a new lambda which essentially has a custom `timeout` duration and `memorySize`. This is because we're going to be running a docker image and we need to make sure that we have enough memory to run the docker image.
+
+2. We've also defined a custom route. In our case, it's going to be the route `[apigateway-url]/[stage]/embed-file` which will trigger our lambda
+
+We then define a new file called `embed-lambda-function.ts` that will determine which specific config to paply.
+
+<CodeTitle lang = "ts" title = "/bin/embed-lambda-function.ts" />
+```ts
+import 'source-map-support/register';
+import * as cdk from 'aws-cdk-lib';
+import { EmbedLambdaFunctionStack } from '../lib/embed-lambda-function-stack';
+import { stagingConfig } from '../lib/staging.config';
+import { prodConfig } from '../lib/prod.config';
+
+const app = new cdk.App();
+new EmbedLambdaFunctionStack(app, 'Staging-EmbedLambdaFunctionStack', {
+  config: stagingConfig,
+});
+
+new EmbedLambdaFunctionStack(app, 'Production-EmbedLambdaFunctionStack', {
+  config: prodConfig,
+});
+```
+
+### Deploying our first lambda
+
+Now let's try to get our lambda working. Let's first create a new python3 virtual environment at the root of our project called `.virtual`
+
+```bash
+python3.9 -m venv .virtual
+```
+
+We then need to activate the virtual environment
+
+```bash
+source .virtual/bin/activate
+```
+
+We can then freeze a set of dependencies that we want to use for our lambda function
+
+```bash
+pip3 freeze > src/requirements.txt
+```
+
+
+Let's create a new python file with a path of `src/lambda_handler.py`. This will be our lambda code.
+
+<CodeTitle lang = "py" title = "/src/lambda_handler.py" />
+```py
+import os
+import json
+import boto3
+
+
+def lambda_handler(event, context):
+    environment = os.environ["ENVIRONMENT"]
+    response = {"environment": environment}
+    return {"statusCode": 200, "body": json.dumps(response)}
+```
+
+and a corresponding `Dockerfile` to package the code 
+
+```Dockerfile
+# Use the AWS provided base image for Python 3.9
+FROM public.ecr.aws/lambda/python:3.9
+
+# Copy the requirements.txt file into the container
+COPY requirements.txt ./
+
+# Install the dependencies using pip
+RUN pip install -r requirements.txt
+
+# Copy the src folder (containing your Lambda function code) into the container
+COPY . .
+
+# Set the CMD to your handler (replace lambda_handler.py and lambda_handler with your file and function names)
+CMD ["lambda_handler.lambda_handler"]
+```
+
+We can then bootstrap our cdk stack using the `bootstrap` command. Note that you only need to run this once per account and region.
+
+```bash
+npx cdk --profile [profileName] bootstrap
+```
+
+Once that's done, we can then deploy our lambda as 
+
+```bash
+npx cdk --profile [profileName] deploy Staging-EmbedLambdaFunctionStack
+```
+
+This will then run a series of commands, before deploying our code as seen above. We can then verify that we've created the new lambda by going to the `lambda` page in your aws console. It should show something like what we have below.
+
+<KommyImage height = {400} width={400} src = "/images/created-staging-lambda.png" blogImage={true} />
+
+We can then verify that it works by clicking into the `staging-embed-function` function. Next click on the test tab. You should be seeing a screen similar to this 
+
+<KommyImage height = {400} width={400} src = "/images/lambda-screenshot.png" blogImage={true} />
+
+Click on the `Test` button and you should see a response similar to this
+
+```bash
+{
+  "statusCode": 200,
+  "body": "{\"environment\": \"staging\"}"
+}
+```
+
+## Writing our Function
+
+### Configuring Langchain
+
+Now that we've got our lambda function working, we can now start to set up our Langchain integration. We're going to be installing it with the following command
+
+```bash
+pip3 install langchain openai
+pip3 freeze > src/requirements.txt
+```
+
+We're going to define a new function which will 
+
+1. Take in a long string
+2. It will then recursively split this string into chunks
+3. We will then generate embeddings for each chunk and then print it out in the logs 
+
+In order to do so, we'll need a Open-AI Key. You can get one by signing up at the Open AI website. Once you've done so, you can then create a new property in your environment variable configuration.
+
+```ts
+interface EmbedLambdaFunctionStackProps extends cdk.StackProps {
+  config: {
+    environment: string;
+    openai_key:string;
+  };
+}
+```
+
+We can then update our config files to include this new property
+
+<CodeTitle lang = "ts" title = "prod.config.ts" />
+```ts
+export const prodConfig = {
+  environment: "prod",
+  openai_key: #your openai key
+};
+```
+
+and our staging copy accordingly
+
+<CodeTitle lang = "ts" title = "staging.config.ts" />
+```ts
+export const stagingConfig = {
+  environment: "staging",
+  openai_key: #your openai key
+};
+```
+
+
+We can implement a simple embedding generator using 
+
+```py
+import os
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.embeddings import OpenAIEmbeddings
+import openai
+
+
+def lambda_handler(event, context):
+    openai.api_key = os.environ["OPENAI_API_KEY"]
+
+    body = event["body"]
+
+    splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+    chunks = splitter.split_text(body["text"])
+    embeddings = OpenAIEmbeddings().embed_documents(chunks)
+
+    for embedding in embeddings:
+        print(embedding)
+
+    return {"statusCode": 200, "body": "ok"}
+```
+
+
+### Testing our Lambda
+
+Now that we've defined a function, let's run a quick test to make sure that it works as planned. The plan is simple 
+
+1. We generate a template using AWS's `SAM` CLI. 
+2. We invoke our lambda function locally using the `SAM` CLI
+3. We then verify that the logs are printed out correctly
+
+```bash
+npx cdk synth Staging-EmbedLambdaFunctionStack > template.yaml
+```
+
+Our lambda function expects a body with a field called `text`. We can create a file called `events.json` with the following content to mock an API Gateway call
+
+```json
+//...
+{
+  "body": "{\"text\":\"This is a sample piece of text which will be encoded though say less\"}",
+  "isBase64Encoded": false
+}
+//...
+```
+
+> Note here that the `body` field is a stringified json object. This is because API Gateway will pass in a stringified json object as the body of the request.
+
+We can then run a local build of our lambda handler and then invoke it locally using sam. We can do so with the following commands 
+
+```bash
+docker build -t embedfilefunctionfb073fd9 ./src  
+sam local invoke "embedFileFunctionFB073FD9"  -e ./events/post.json
+```
+
+You should see a response similar to this 
+
+
+
+> "errorMessage": "Could not import tiktoken python package. This is needed in order to for OpenAIEmbeddings. Please install it with `pip install tiktoken`.", "errorType": "ImportError", "requestId": "bb44b7ed-d256-4707-9490-60eda57afa82"
+
+
+### Fixing Dependencies 
+
+There are a few things that we'll need to do in order to get langchain and openai embedings to work 
+
+1. We'll need to install `tiktoken` as a dependency
+2. We need to configure our NLTK library whicih is used to split our text into chunks so that the necessary packages are configured in the image itself. This is because AWS lambda only provides a single /tmp directory to write to and that it would be very costly and inefficient to reload the binaries every single time we run our lambda function.
+
+Let's now try to install tiktoken
+
+```bash 
+pip3 install tiktoken nltk
+pip freeze > src/requirements.txt
+```
+
+We also need to update our `Dockerfile` to download these dependencies ahead of time .
+
+```Dockerfile showLineNumbers {9}
+# Use the AWS provided base image for Python 3.9
+FROM public.ecr.aws/lambda/python:3.9
+
+# Copy the requirements.txt file into the container
+COPY requirements.txt ./
+
+# Install the dependencies using pip
+RUN pip install -r requirements.txt
+RUN python3.9 -m nltk.downloader punkt averaged_perceptron_tagger -d /nltk_data
+
+# Copy the src folder (containing your Lambda function code) into the container
+COPY . .
+
+# Set the CMD to your handler (replace lambda_handler.py and lambda_handler with your file and function names)
+CMD ["lambda_handler.lambda_handler"]
+```
+
+and update our lambda handler so that it uses the new `/nltk_data` directory
+
+```python showLineNumbers {5,11-12}
+import os
+from langchain.text_splitter import RecursiveCharacterTextSplitter
+from langchain.embeddings import OpenAIEmbeddings
+import openai
+import nltk
+
+
+def lambda_handler(event, context):
+    openai.api_key = os.environ["OPENAI_API_KEY"]
+
+    nltk.data.path.append("/nltk_data")
+    os.environ["NLTK_DATA"] = "/nltk_data"
+
+    body = event["body"]
+
+    splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
+    chunks = splitter.split_text(body["text"])
+    embeddings = OpenAIEmbeddings().embed_documents(chunks)
+
+    return {
+        "statusCode": 200,
+        "body": f"Generated a total of {len(embeddings)} from {len(chunks)} chunks from original text of {body['text']}",
+    }
+```
+
+Now when we run our original command 
+
+```bash
+docker build -t embedfilefunctionfb073fd9 ./src  
+sam local invoke "embedFileFunctionFB073FD9"  -e ./events/post.json
+```
+
+We get the following output 
+
+```bash                                                                                                
+START RequestId: 4ce1180b-11a8-4fe1-ac6a-cfd61679af45 Version: $LATEST
+END RequestId: 4ce1180b-11a8-4fe1-ac6a-cfd61679af45
+REPORT RequestId: 4ce1180b-11a8-4fe1-ac6a-cfd61679af45  Init Duration: 0.88 ms  Duration: 4974.34 ms    Billed Duration: 4975 ms        Memory Size: 512 MBMax Memory Used: 512 MB
+```
+
+
+and a response of `{"statusCode": 200, "body": "Generated a total of 1 from 1 chunks from original text of This is a sample piece of text which will be encoded though say less"}` which signifies that we have a succesful run. 
+
+Let's now deploy our latest changes to lambda and set up our API Gateway
+
+```bash
+npx cdk --profile qilin deploy Staging-EmbedLambdaFunctionStack
+```
+
+## Deploying Our Lambda 
+
+Now that we've configured our function, we want to make sure that we can indeed call our API Gateway and get a response back. To do so, we'll need to set up a deployment for our api gateway. In our case, since we're working on our staging stack, we're going to call it a `staging` deployment.
+
+### Setting up our API Gateway
+
+We've already configured our API Gateway trigger in our `EmbedLambdaFunctionStack` so all that's left is to deploy our API Gateway. 
+
+We can do so by modifying our `embed-lambda-function-stack.ts` file to include an API Gateway Deployment Configuration 
+
+<CodeTitle lang="ts" title = "lib/embed-lambda-function-stack.ts" />
+```ts showLineNumbers {41-52}
+import { Construct } from 'constructs';
+import * as cdk from "aws-cdk-lib";
+import { aws_lambda as lambda } from "aws-cdk-lib";
+import { aws_apigateway as apigateway } from "aws-cdk-lib";
+import * as path from "path";
+
+interface EmbedLambdaFunctionStackProps extends cdk.StackProps {
+  config: {
+    environment: string;
+    openai_key:string;
+  };
+}
+
+export class EmbedLambdaFunctionStack extends cdk.Stack {
+  constructor(scope: Construct , id: string, props: EmbedLambdaFunctionStackProps) {
+    super(scope, id, props);
+
+    const { config } = props;
+
+    // Create the Lambda function
+    const embedFileFunction = new lambda.DockerImageFunction(this, "embedFileFunction", {
+      functionName: `${config.environment}-embed-lambda`,
+      code: lambda.DockerImageCode.fromImageAsset(path.join(__dirname, "../src")),
+      environment: {
+        ENVIRONMENT: config.environment,
+        OPENAI_API_KEY: config.openai_key,
+      },
+      timeout: cdk.Duration.seconds(300),
+      memorySize: 512
+    });
+
+    // Create the API Gateway
+    const api = new apigateway.RestApi(this, "MyApiGateway");
+
+    // Add the desired path to the API Gateway
+    const embedFileResource = api.root.addResource("embed-file");
+    // Add the POST method to the embed-file resource
+    embedFileResource.addMethod("POST", new apigateway.LambdaIntegration(embedFileFunction));
+
+    // Create a deployment for the API Gateway
+    const deployment = new apigateway.Deployment(this, 'ApiDeployment', {
+      api: api,
+    });
+
+    // Create a stage for the API Gateway
+    const stage = new apigateway.Stage(this, 'ApiStage', {
+      deployment: deployment,
+      stageName: 'staging',
+    });
+
+    // Assign the stage to the API Gateway
+    api.deploymentStage = stage;
+  }
+}
+```
+
+This will now allow us to be able to deploy our API Gateway and have it be accessible via the `/staging` endpoint. Let's now run the  `cdk deploy` command to deploy our API Gateway. 
+
+```bash
+npx cdk --profile [profileName] deploy Staging-EmbedLambdaFunctionStack
+```
+
+Once this is done, we can now test our API Gateway using a HTTP Post request
+
+### Testing our Lambda with a curl request
+
+Before we can test our lambda function, we need to get our API Gateway endpoint. This is output for us in the Outputs 
+
+```bash
+/// Other deployment stuff 
+
+Outputs:
+Staging-EmbedLambdaFunctionStack.embedfilegatewayEndpoint572D438A = https://[api-gateway-url]/prod/
+
+//..
+```
+
+We can now use this url to test our API Gateway. However instead of it being `/prod`, it'll be `https://[api-gateway-url]/staging/` for us. 
+
+```bash
+curl -X POST \
+  'https://[aws-gateway-url]/staging/embed-file' \
+  --header 'Accept: */*' \
+  --header 'Content-Type: application/json' \
+  --data-raw "{
+  "text": "Much ado to do about nothing is really a fascinating study of how the human experience is to some degree. It'\''s a fun thing to consider."
+}"
+Generated a total of 1 from 1 chunks from original text of Much ado to do about nothing is really a fascinating study of how the human experience is to some degree. It's a fun thing to consider.%   
+```
+
+We can see that we get a response back from our lambda function. This means that we've successfully deployed our lambda function and can now use it in our application.
+
+
+## CI/CD 
+
+Now that we've successfully deployed our lambda function, we want to be able to deploy our lambda function automatically whenever we push to our `staging` branch. To do so, we'll need to set up a CI/CD pipeline.
+
+Our CI/CD pipeline will look like this 
+
+1. `Codebuild` - Generate a new Docker image based on our lambda and push it to our ECR repository
+2. `CodeBuild` - Generate a `template.json` file which consists of the latest new changes/configurations to our lambda
+3. `CodePipeline` - Deploy the new cloudformation stack and lambda function
+
+> Make sure to create a new ecr repository and note down its name. In my case, I created a new private ECR repository which has a name of `aws-lambda-repo`.
+
+### Generating a Docker Image
+
+The first thing we need to build is to define a new CodeBuild step. This will be responsible for building our docker image and pushing it to our ECR repository. But before we do so, let's configure our lambda stack so that it references a consistent image. In my case, I've chosen to call my image `{staging_env}-embed-lambda`. 
+
+But before you do so, you'll need to modify the `embed-lambda-function-stack.ts` file to include a new property called `ecrRepositoryName` so that it includes the name of the repository that we want to push to.
+
+```ts showLineNumbers {6}
+interface EmbedLambdaFunctionStackProps extends cdk.StackProps {
+  config: {
+    environment: string;
+    openai_key: string;
+  };
+  ecrRepositoryName: string;
+}
+```
+
+We then modify our lambda stack to reference this new docker image and repository.
+
+```ts showLineNumbers {6,10-12}
+export class EmbedLambdaFunctionStack extends cdk.Stack {
+  constructor(scope: Construct, id: string, props: EmbedLambdaFunctionStackProps) {
+    super(scope, id, props);
+
+    const { config, ecrRepositoryName: ecrRepository } = props;
+    const existingEcrRepository = ecr.Repository.fromRepositoryName(this, 'ExistingEcrRepo', ecrRepository);
+
+    const embedFileFunction = new lambda.DockerImageFunction(this, "embedFileFunction", {
+      functionName: `${config.environment}-embed-lambda`,
+      code: lambda.DockerImageCode.fromEcr(existingEcrRepository, {
+        tag: `${config.environment}-embed-lambda`
+      }),
+      environment: {
+        ENVIRONMENT: config.environment,
+        OPENAI_API_KEY: config.openai_key,
+      },
+      timeout: cdk.Duration.seconds(300),
+      memorySize: 512
+    });
+
+    // Other CDK definitions
+  }
+}
+```
+
+We can then update our original `embed-lambda-function.ts` to include this new property with 
+
+```ts
+const app = new cdk.App();
+
+const stagingStack = new EmbedLambdaFunctionStack(app, 'Staging-EmbedLambdaFunctionStack', {
+  config: stagingConfig,
+  ecrRepositoryName: "aws-lambda-repo",
+});
+
+const prodStack = new EmbedLambdaFunctionStack(app, 'Production-EmbedLambdaFunctionStack', {
+  config: prodConfig,
+  ecrRepositoryName: "aws-lambda-repo"
+});
+```
+
+Let's now create a new file called `lib/pipeline.ts` which will hold the pipeline definition code. Let's start by writing out a definition for this file 
+
+<CodeTitle lang ="ts" title = "lib/pipeline.ts" />
+```ts
+import * as cdk from 'aws-cdk-lib';
+import * as codecommit from 'aws-cdk-lib/aws-codecommit';
+import * as codepipeline from 'aws-cdk-lib/aws-codepipeline';
+import * as codepipeline_actions from 'aws-cdk-lib/aws-codepipeline-actions';
+import { Construct } from 'constructs';
+import { EmbedLambdaFunctionStack } from './embed-lambda-function-stack';
+import * as codebuild from 'aws-cdk-lib/aws-codebuild';
+import { LinuxBuildImage } from 'aws-cdk-lib/aws-codebuild';
+import * as iam from 'aws-cdk-lib/aws-iam';
+
+function createPipeline(scope: Construct, id: string, branch: string, stack: cdk.Stack) {
+  const repo = codecommit.Repository.fromRepositoryName(scope, `${id}Repo`, 'embed-lambda-function');
+
+  const sourceOutput = new codepipeline.Artifact();
+  const sourceAction = new codepipeline_actions.CodeCommitSourceAction({
+    actionName: 'CodeCommit',
+    repository: repo,
+    branch: branch,
+    output: sourceOutput,
+  });
+
+  const accountId = cdk.Stack.of(scope).account;
+  const region = cdk.Stack.of(scope).region;
+
+  const ecrRepositoryUri = `${accountId}.dkr.ecr.${region}.amazonaws.com/aws-lambda-repo`;
+  const ecrRepositoryArn = `arn:aws:ecr:${region}:${accountId}:repository/aws-lambda-repo`;
+
+  const buildDockerImageProject = new codebuild.PipelineProject(scope, 'DockerImageProject', {
+    environment: {
+      privileged: true,
+    },
+    buildSpec: codebuild.BuildSpec.fromObject({
+      version: '0.2',
+      phases: {
+        pre_build: {
+          commands: [
+            '$(aws ecr get-login --region $AWS_DEFAULT_REGION --no-include-email)',
+            `REPOSITORY_URI=${ecrRepositoryUri}`,
+            'BRANCH_NAME=$(echo $CODEBUILD_WEBHOOK_HEAD_REF | cut -d/ -f3)',
+            `IMAGE_TAG=${branch}-embed-lambda`,
+          ],
+        },
+        build: {
+          commands: [
+            'cd ./src',
+            'docker build -t $REPOSITORY_URI:$IMAGE_TAG .',
+            'docker push $REPOSITORY_URI:$IMAGE_TAG',
+          ],
+        },
+      },
+    }),
+  })
+
+  buildDockerImageProject.addToRolePolicy(new iam.PolicyStatement({
+    actions: ['ecr:GetAuthorizationToken'],
+    resources: ["*"],
+  }));
+
+  buildDockerImageProject.addToRolePolicy(new iam.PolicyStatement({
+    actions: [
+      'ecr:BatchCheckLayerAvailability',
+      'ecr:CompleteLayerUpload',
+      'ecr:InitiateLayerUpload',
+      'ecr:PutImage',
+      'ecr:UploadLayerPart',
+    ],
+    resources: [ecrRepositoryArn],
+  }));
+
+  const buildDockerImage = new codepipeline_actions.CodeBuildAction({
+    actionName: 'BuildAndPushDockerImage',
+    project: buildDockerImageProject,
+    input: sourceOutput,
+    outputs: [new codepipeline.Artifact()],
+  })
+
+  const pipeline = new codepipeline.Pipeline(scope, id, {
+    pipelineName: `${id}Pipeline`,
+    stages: [
+
+      {
+        stageName: 'Source',
+        actions: [sourceAction],
+      },
+      {
+        stageName: 'BuildAndPushDockerImage',
+        actions: [buildDockerImage],
+      },
+    ]
+  });
+}
+
+
+export class DeploymentPipelineStack extends cdk.Stack {
+  constructor(
+    scope: Construct,
+    id: string,
+    stack: EmbedLambdaFunctionStack,
+    branch: string,
+    pipelineName: string,
+    props?: cdk.StackProps
+  ) {
+    super(scope, id, props);
+    createPipeline(this, pipelineName, branch, stack);
+  }
+}
+```
+
+Let's break down what's happening here exactly in the `createPipeline` function
+
+First, we define a `Source` step. This step clones the repository source code within our `CodeCommit` repository onto the machine that is running our entire code commit pipeline.
+
+```ts
+const repo = codecommit.Repository.fromRepositoryName(scope, `${id}Repo`, 'embed-lambda-function');
+
+const sourceOutput = new codepipeline.Artifact();
+const sourceAction = new codepipeline_actions.CodeCommitSourceAction({
+  actionName: 'CodeCommit',
+  repository: repo,
+  branch: branch,
+  output: sourceOutput,
+});
+```
+
+Secondly, we define a bunch of constants which are used to define our ECR repository ARN and URI.
+
+> An AWS ARN, or Amazon Resource Name, is a unique identifier for resources within the Amazon Web Services (AWS) ecosystem. ARNs are used to unambiguously specify a resource across all AWS services, such as in IAM policies, Amazon RDS tags, and API calls
+
+This is necessary for our next step.
+
+```ts
+const accountId = cdk.Stack.of(scope).account;
+const region = cdk.Stack.of(scope).region;
+
+const ecrRepositoryUri = `${accountId}.dkr.ecr.${region}.amazonaws.com/aws-lambda-repo`;
+const ecrRepositoryArn = `arn:aws:ecr:${region}:${accountId}:repository/aws-lambda-repo`;
+```
+
+Next, we then define a the code build pipelineProject. Just a few things to note 
+
+- We're using a `privileged` environment. This is because we need to be able to run docker commands within our build environment. 
+- We're also running a command `cd ./src` since our lambda code is contained within the `src` folder.
+
+```ts
+const buildDockerImageProject = new codebuild.PipelineProject(scope, 'DockerImageProject', {
+    environment: {
+      privileged: true,
+    },
+    buildSpec: codebuild.BuildSpec.fromObject({
+      version: '0.2',
+      phases: {
+        pre_build: {
+          commands: [
+            '$(aws ecr get-login --region $AWS_DEFAULT_REGION --no-include-email)',
+            `REPOSITORY_URI=${ecrRepositoryUri}`,
+            'BRANCH_NAME=$(echo $CODEBUILD_WEBHOOK_HEAD_REF | cut -d/ -f3)',
+            `IMAGE_TAG=${branch}-embed-lambda`,
+          ],
+        },
+        build: {
+          commands: [
+            'cd ./src',
+            'docker build -t $REPOSITORY_URI:$IMAGE_TAG .',
+            'docker push $REPOSITORY_URI:$IMAGE_TAG',
+          ],
+        },
+      },
+    }),
+  })
+```
+
+We then need to define a few IAM permissions so that our code build project can access our ECR repository. We do so with the following code where we define the ability to upload the docker image only to our ECR repository.
+
+```ts
+buildDockerImageProject.addToRolePolicy(new iam.PolicyStatement({
+    actions: ['ecr:GetAuthorizationToken'],
+    resources: ["*"],
+  }));
+
+  buildDockerImageProject.addToRolePolicy(new iam.PolicyStatement({
+    actions: [
+      'ecr:BatchCheckLayerAvailability',
+      'ecr:CompleteLayerUpload',
+      'ecr:InitiateLayerUpload',
+      'ecr:PutImage',
+      'ecr:UploadLayerPart',
+    ],
+    resources: [ecrRepositoryArn],
+  }));
+```
+Next, we then use this definition to define a new build step as 
+
+```ts
+ const buildDockerImage = new codepipeline_actions.CodeBuildAction({
+    actionName: 'BuildAndPushDockerImage',
+    project: buildDockerImageProject,
+    input: sourceOutput,
+    outputs: [new codepipeline.Artifact()],
+  })
+```
+
+Lastly, we then combine these into a single pipeline as 
+
+```ts
+const pipeline = new codepipeline.Pipeline(scope, id, {
+    pipelineName: `${id}Pipeline`,
+    stages: [
+      {
+        stageName: 'Source',
+        actions: [sourceAction],
+      },
+      {
+        stageName: 'BuildAndPushDockerImage',
+        actions: [buildDockerImage],
+      },
+    ]
+  });
+```
+
+### Generating a `.template.json` file
+
+Our next step is to generate a `.template.json` file for the stack that we want to deploy. The reason for this is because we want to make sure our stack is always up to date with the latest changes.
+
+In order to do this, we can simply define another build step which will generate this file for us. Some quick things to note 
+
+1. I've specified the build image to be specifically `AMAZON_LINUX_2_5`. 
+2. I've indicated that I want nodejs to be `v18`. This is done so that I know my nodejs version on codebuild matches my local development machine.
+
+> You can find a list of available build images [here](https://docs.aws.amazon.com/codebuild/latest/userguide/build-env-ref-available.html) and a corresponding list of runtimes for nodejs,php and  runtimes [here](https://docs.aws.amazon.com/codebuild/latest/userguide/available-runtimes.html) 
+
+
+
+We can do so with the following code 
+
+```ts
+const buildOutput = new codepipeline.Artifact();
+  const buildProject = new codebuild.PipelineProject(scope, 'BuildProject', {
+    environment: {
+      buildImage: LinuxBuildImage.AMAZON_LINUX_2_5
+    },
+    buildSpec: codebuild.BuildSpec.fromObject({
+      version: '0.2',
+      phases: {
+        install: {
+          'runtime-versions': {
+            nodejs: "18"
+          },
+          commands: [
+            'npm install',
+            'npm run build',
+            `npx cdk synth ${stack.stackName}`,
+          ],
+        },
+      },
+      artifacts: {
+        'base-directory': 'cdk.out',
+        files: [
+          `${stack.stackName}.template.json`,
+        ],
+      },
+    }),
+  });
+```
+
+We then need to define a new `CodeBuildAction` which will be responsible for running this build step. We can do so with the following code 
+
+```ts
+const buildAction = new codepipeline_actions.CodeBuildAction({
+    actionName: 'Build',
+    project: buildProject,
+    input: sourceOutput,
+    outputs: [buildOutput],
+  });
+```
+
+### Deploying Our Stack 
+
+Our last step is to deploy our stack. We can do so with the following code 
+
+```ts
+{
+  stageName: 'Deploy',
+  actions: [
+    new codepipeline_actions.CloudFormationCreateUpdateStackAction({
+      actionName: 'DeployStack',
+      templatePath: buildOutput.atPath(`${stack.stackName}.template.json`),
+      stackName: stack.stackName,
+      adminPermissions: true,
+    }),
+  ],
+},
+```
+
+This brings us to a final configuration of `lib/pipeline.ts` which looks like this
+
+```ts
+import * as cdk from 'aws-cdk-lib';
+import * as codecommit from 'aws-cdk-lib/aws-codecommit';
+import * as codepipeline from 'aws-cdk-lib/aws-codepipeline';
+import * as codepipeline_actions from 'aws-cdk-lib/aws-codepipeline-actions';
+import { Construct } from 'constructs';
+import { EmbedLambdaFunctionStack } from './embed-lambda-function-stack';
+import * as codebuild from 'aws-cdk-lib/aws-codebuild';
+import { LinuxBuildImage } from 'aws-cdk-lib/aws-codebuild';
+import * as iam from 'aws-cdk-lib/aws-iam';
+
+
+function createPipeline(scope: Construct, id: string, branch: string, stack: cdk.Stack) {
+  const repo = codecommit.Repository.fromRepositoryName(scope, `${id}Repo`, 'embed-lambda-function');
+
+  const sourceOutput = new codepipeline.Artifact();
+  const sourceAction = new codepipeline_actions.CodeCommitSourceAction({
+    actionName: 'CodeCommit',
+    repository: repo,
+    branch: branch,
+    output: sourceOutput,
+  });
+
+  const accountId = cdk.Stack.of(scope).account;
+  const region = cdk.Stack.of(scope).region;
+
+  const ecrRepositoryUri = `${accountId}.dkr.ecr.${region}.amazonaws.com/aws-lambda-repo`;
+  const ecrRepositoryArn = `arn:aws:ecr:${region}:${accountId}:repository/aws-lambda-repo`;
+
+  const buildDockerImageProject = new codebuild.PipelineProject(scope, 'DockerImageProject', {
+    environment: {
+      privileged: true,
+    },
+    buildSpec: codebuild.BuildSpec.fromObject({
+      version: '0.2',
+      phases: {
+        pre_build: {
+          commands: [
+            '$(aws ecr get-login --region $AWS_DEFAULT_REGION --no-include-email)',
+            `REPOSITORY_URI=${ecrRepositoryUri}`,
+            'BRANCH_NAME=$(echo $CODEBUILD_WEBHOOK_HEAD_REF | cut -d/ -f3)',
+            `IMAGE_TAG=${branch}-embed-lambda`,
+          ],
+        },
+        build: {
+          commands: [
+            'cd ./src',
+            'docker build -t $REPOSITORY_URI:$IMAGE_TAG .',
+            'docker push $REPOSITORY_URI:$IMAGE_TAG',
+          ],
+        },
+      },
+    }),
+  })
+
+  buildDockerImageProject.addToRolePolicy(new iam.PolicyStatement({
+    actions: ['ecr:GetAuthorizationToken'],
+    resources: ["*"],
+  }));
+
+  buildDockerImageProject.addToRolePolicy(new iam.PolicyStatement({
+    actions: [
+      'ecr:BatchCheckLayerAvailability',
+      'ecr:CompleteLayerUpload',
+      'ecr:InitiateLayerUpload',
+      'ecr:PutImage',
+      'ecr:UploadLayerPart',
+    ],
+    resources: [ecrRepositoryArn],
+  }));
+
+  const buildDockerImage = new codepipeline_actions.CodeBuildAction({
+    actionName: 'BuildAndPushDockerImage',
+    project: buildDockerImageProject,
+    input: sourceOutput,
+    outputs: [new codepipeline.Artifact()],
+  })
+
+  const buildOutput = new codepipeline.Artifact();
+  const buildProject = new codebuild.PipelineProject(scope, 'BuildProject', {
+    environment: {
+      buildImage: LinuxBuildImage.AMAZON_LINUX_2_5
+    },
+    buildSpec: codebuild.BuildSpec.fromObject({
+      version: '0.2',
+      phases: {
+        install: {
+          'runtime-versions': {
+            nodejs: "18"
+          },
+          commands: [
+            'npm install',
+            'npm run build',
+            `npx cdk synth ${stack.stackName}`,
+          ],
+        },
+      },
+      artifacts: {
+        'base-directory': 'cdk.out',
+        files: [
+          `${stack.stackName}.template.json`,
+        ],
+      },
+    }),
+  });
+
+  const buildAction = new codepipeline_actions.CodeBuildAction({
+    actionName: 'Build',
+    project: buildProject,
+    input: sourceOutput,
+    outputs: [buildOutput],
+  });
+
+  const pipeline = new codepipeline.Pipeline(scope, id, {
+    pipelineName: `${id}Pipeline`,
+    stages: [
+
+      {
+        stageName: 'Source',
+        actions: [sourceAction],
+      },
+      {
+        stageName: 'BuildAndPushDockerImage',
+        actions: [buildDockerImage],
+      },
+      {
+        stageName: 'Build',
+        actions: [buildAction],
+      },
+
+      {
+        stageName: 'Deploy',
+        actions: [
+          new codepipeline_actions.CloudFormationCreateUpdateStackAction({
+            actionName: 'DeployStack',
+            templatePath: buildOutput.atPath(`${stack.stackName}.template.json`),
+            stackName: stack.stackName,
+            adminPermissions: true,
+          }),
+        ],
+      },
+    ],
+  });
+}
+
+export class DeploymentPipelineStack extends cdk.Stack {
+  constructor(
+    scope: Construct,
+    id: string,
+    stack: EmbedLambdaFunctionStack,
+    branch: string,
+    pipelineName: string,
+    props?: cdk.StackProps
+  ) {
+    super(scope, id, props);
+    createPipeline(this, pipelineName, branch, stack);
+  }
+}
+```
+
+### Updating Our App File 
+
+Now that we've configured a generic pipeline file which can be used to define a pipeline for any stack, we can now update our `app.ts` file to include this new pipeline. 
+
+```ts
+#!/usr/bin/env node
+import 'source-map-support/register';
+import * as cdk from 'aws-cdk-lib';
+import { EmbedLambdaFunctionStack } from '../lib/embed-lambda-function-stack';
+import { stagingConfig } from '../lib/staging.config';
+import { prodConfig } from '../lib/prod.config';
+import { DeploymentPipelineStack } from '../lib/pipeline';
+import * as ecr from 'aws-cdk-lib/aws-ecr';
+
+
+const app = new cdk.App();
+
+const stagingStack = new EmbedLambdaFunctionStack(app, 'Staging-EmbedLambdaFunctionStack', {
+  config: stagingConfig,
+  ecrRepositoryName: "aws-lambda-repo",
+});
+
+const stagingPipelineStack = new DeploymentPipelineStack(
+  app,
+  'StagingPipelineStack',
+  stagingStack,
+  'staging',
+  'stagingPipeline'
+);
+
+const prodStack = new EmbedLambdaFunctionStack(app, 'Production-EmbedLambdaFunctionStack', {
+  config: prodConfig,
+  ecrRepositoryName: "aws-lambda-repo"
+});
+
+const masterPipelineStack = new DeploymentPipelineStack(
+  app,
+  'ProdPipelineStack',
+  prodStack,
+  'master',
+  'prodPipeline'
+);
+```
+
+You can then deploy this stack by running 
+
+```ts
+npx cdk --profile <profileName> deploy StagingPipelineStack
+```
+
+Once this is done, any subsequent push to the `staging` branch should in turn kick off our CI/CD pipeline and deploy the latest version of our lambda.
+
+## Conclusion
+
+In this specific tutorial, we've seen how to deploy an AWS CI/CD pipeline. To update it for a generic `main` and `staging` stack, all we need to is to deploy both the `StagingPipelineStack` and `ProdPipelineStack` and then push to the respective branches.
+
+While it seems like you're doing a lot of config just to get a simple response, this is just a taste of the granularity which AWS provides. We'll explore more of this in future articles along with a bunch of related topics.
+
+
+

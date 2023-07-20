@@ -27,6 +27,7 @@ const PostPage = () => {
             <PostCard key={post._id} post={post} />
           ))}
       </SectionHeader>
+      <div className="py-6" />
     </>
   );
 };
