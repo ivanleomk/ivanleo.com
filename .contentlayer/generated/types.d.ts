@@ -19,6 +19,7 @@ export type Post = {
   date: IsoDateTimeString
   description: string
   categories?: string[] | undefined
+  draft: boolean
   /** MDX file body */
   body: MDX
   url: string

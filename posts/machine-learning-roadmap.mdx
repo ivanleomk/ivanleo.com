@@ -6,40 +6,34 @@ categories:
   - FastAI
   - Deep Learning
 description: I'm planning to break into the ML side of things - here's what I have in mind.
+draft: true
 ---
 
 ## Background
 
-A while ago, someone introduced me to Chat GPT and I was immediately mindblown. Before long, I was typing in entire search queries into chatgpt and getting significantly better results than Google. I was hooked.
-
-What made it amazing were a few things
-1. I could customize what I was getting back by modifying my prompt
-2. I could get more personalised results
-
-Now, this isn't my first foray into machine learning. I'd done a previous research paper on using Generative Adverserial Networks as a final year thesis while trying to graduate. But I'd never really understood what machine learning really was or seen its applicability in real life. This time, I'd like to really get a handle on things and know how to build and why it works.
-
-So, anyway - let's move on to the plan.
-
-
-## The Plan
-
-I'll be updating this plan as we go along simply because it's going to keep growing 
-
-1. FastAI Course Part 1 
-2. FastAI Course Part 2 
-3. Neural Networks From Scratch 
-4. Designing Machine Learning Systems 
-5. Machine Learning System Design Interview
+Looking to break into ML and I kind of lose track of what I've been doing so I figured I'd just document everything here.
 
 
 ## The Progress
 
-### May
+### July 
 
-I've managed to finish up Part 1 of Fast AI's course and boy have I learnt a lot about machine learning in general. The course seems to cover a lot more of traditional machine learning techniques and there's a lot which I'll definitely need to revisit.  You can read my notes here [FastAI Part 1](/blog/notes_on_fast_ai)
+I wasn't able to do as much as I wanted due to reservice commitments but I did manage to get a few things done.
+
+- Discovered Andrej Karpathy's [Zero to Hero course](https://karpathy.ai/zero-to-hero.html) and plan to start working through it through August. So far I've finished up with his intro to neural networks and I built a basic binary classifier which has ~42% accuracy using a custom neural network I coded in vanila python ( [Link](blog/notes_on_zero_to_hero) )
+
+- Finally figured out how to deploy [langchain on AWS lambda](blog/ci_cd_with_langchain_aws_lambda_using_docker_image) and spent my entire weekend trying to automate a 20 min task with aws sdk 
 
 ### June
 
 June has just started and my plan now is to work on more applications of LLMs. I believe that using LLMs to augment my learning will help tremendously when it comes to generating new insights and finding interesting angles to explore. 
 
-The plan is to build a local LLM using gpt to be able to query and discover new insights about my previous notes and chats. Look out for more articles to come.
+The plan is to build a local LLM using gpt to be able to query and discover new insights about my previous notes and chats. I tried implementing a basic clone with memory and embeddings [here](blog/why_use_chat_gpt_when_you_can_build_your_own_) but ended up getting side tracked with other ideas.
+
+I also started experimenting with Open AI Functions and built out a simple classifier using Yake and GPT that was able to classify places that I had been to before using my reviews and other metadata ( [Link](blog/crawling_your_saved_places_with_google_maps) )
+
+
+### May
+
+I've managed to finish up Part 1 of Fast AI's course and boy have I learnt a lot about machine learning in general. The course seems to cover a lot more of traditional machine learning techniques and there's a lot which I'll definitely need to revisit.  You can read my notes here [FastAI Part 1](/blog/notes_on_fast_ai)
+

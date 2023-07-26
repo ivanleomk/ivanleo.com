@@ -41,6 +41,11 @@ const Post = defineDocumentType(() => ({
       of: { type: "string" },
       required: false,
     },
+    draft: {
+      type: "boolean",
+      required: false,
+      default: false,
+    }
   },
   computedFields: {
     url: {

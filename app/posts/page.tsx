@@ -6,7 +6,7 @@ import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import PostCard from "../components/PostCard";
 
-const posts = allPosts.sort((a, b) => {
+const posts = allPosts.filter(item => !item.draft).sort((a, b) => {
   return compareDesc(new Date(a.date), new Date(b.date));
 });
 

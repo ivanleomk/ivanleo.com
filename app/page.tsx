@@ -6,7 +6,7 @@ import { compareDesc, format } from "date-fns";
 import PostCard from "./components/PostCard";
 import SectionHeader from "./components/SectionHeader";
 
-const posts = allPosts.sort((a, b) => {
+const posts = allPosts.filter(item => !item.draft).sort((a, b) => {
   return compareDesc(new Date(a.date), new Date(b.date));
 });
 

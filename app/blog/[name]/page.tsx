@@ -9,15 +9,15 @@ import Callout from "@/app/components/Callout";
 import KommyImage from "@/app/components/KommyImage";
 import KommyLink from "@/app/components/KommyLink";
 import Pre from "@/app/components/Pre";
-import Tweet from "@/app/components/Tweet";
 import { getAllTweetData } from "@/app/utils/tweet";
 import TableOfContents from "@/app/components/TableOfContent";
+import { Tweet } from "react-tweet";
 
 type Params = {
   name: string;
 };
 
-const CodeBlocks = {
+export const CodeBlocks = {
   Callout,
   CodeTitle,
   KommyImage,
@@ -111,7 +111,8 @@ const BlogPage = async ({ params }: { params: Params }) => {
 
   const StaticTweet = ({ id }: { id: keyof typeof tweetData }) => {
     // Use the tweets map that is present in the outer scope to get the content associated with the id passed as prop
-    return <Tweet data={tweetData[id]} />;
+    // return <Tweet data={tweetData[id]} />;
+    return <Tweet id={id} />
   };
 
   return (
