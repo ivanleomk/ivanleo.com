@@ -9,9 +9,10 @@ import crawlingGoogleMapsSavedListMdx from './crawling-google-maps-saved-list.md
 import deployingADockerContainerOnAzureMdx from './deploying-a-docker-container-on-azure.mdx.json' assert { type: 'json' }
 import deployingLangchainDockerOnAwsMdx from './deploying-langchain-docker-on-aws.mdx.json' assert { type: 'json' }
 import fastaiMdx from './fastai.mdx.json' assert { type: 'json' }
+import implementingMagicLinksWithResendAndKyselyAdaptorMdx from './implementing-magic-links-with-resend-and-kysely-adaptor.mdx.json' assert { type: 'json' }
 import machineLearningRoadmapMdx from './machine-learning-roadmap.mdx.json' assert { type: 'json' }
 import neuralNetworksFromScratchMdx from './neural-networks-from-scratch.mdx.json' assert { type: 'json' }
 import usingCloudflareWorkersInNextjsMdx from './using-cloudflare-workers-in-nextjs.mdx.json' assert { type: 'json' }
 import whispersInTheBackgroundMdx from './whispers-in-the-background.mdx.json' assert { type: 'json' }
 
-export const allPosts = [notImplementedErrorFastAiVisionLearnerMdx, buildingALocalChatgptCloneFromScratchMdx, classifyingDisasterTweetsOnKaggleMdx, clickMeMdx, configuringNextAuthWithNextjsMdx, crawlingGoogleMapsSavedListMdx, deployingADockerContainerOnAzureMdx, deployingLangchainDockerOnAwsMdx, fastaiMdx, machineLearningRoadmapMdx, neuralNetworksFromScratchMdx, usingCloudflareWorkersInNextjsMdx, whispersInTheBackgroundMdx]
+export const allPosts = [notImplementedErrorFastAiVisionLearnerMdx, buildingALocalChatgptCloneFromScratchMdx, classifyingDisasterTweetsOnKaggleMdx, clickMeMdx, configuringNextAuthWithNextjsMdx, crawlingGoogleMapsSavedListMdx, deployingADockerContainerOnAzureMdx, deployingLangchainDockerOnAwsMdx, fastaiMdx, implementingMagicLinksWithResendAndKyselyAdaptorMdx, machineLearningRoadmapMdx, neuralNetworksFromScratchMdx, usingCloudflareWorkersInNextjsMdx, whispersInTheBackgroundMdx]

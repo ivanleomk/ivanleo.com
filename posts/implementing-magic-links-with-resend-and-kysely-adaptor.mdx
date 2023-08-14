@@ -1,0 +1,304 @@
+---
+title: Implementing Magic Links with Resend, Kysely and Next-Auth
+date: 2023-08-14
+categories:
+  - NextJS
+  - Authentication
+description: Revising my original article on implementing magic links with Next-Auth, NextJS and Prisma to use Resend and Kysely instead.
+---
+
+## Introduction
+
+I recently wrote an article on how to implement magic links with Next-Auth, NextJS and Prisma. I've since discovered a couple of libraries that make the process a lot easier. This article will show you how to implement magic links with Next-Auth, NextJS, Resend and Kysely.
+
+Original exploration was inspired by Dax's tweet below
+
+<StaticTweet id="1651434348174778370" />
+
+I've always prefered kysely over Prisma since it gives me much more flexibility and is significantly faster on the edge. So I figured that I would switch over to using their new adapter once it was released.
+
+Next auth handles the authentication for us. When a user tries to login, we send them an email with a link. The link contains a token that is valid for 5 minutes. When the user clicks the link, we verify the token and log them in. `Resend` takes care of the email sending and `Kysely` takes care of the database queries. 
+
+## Setup 
+
+I've already written up most of the code [here](https://github.com/ivanleomk/next-auth-resend-kysely) so this will be a quick walkthrough instead of a comprehensive tutorial. 
+
+You can clone my repo and run `yarn` to install the dependencies. 
+
+```bash
+git clone https://github.com/ivanleomk/next-auth-resend-kysely
+cd next-auth-resend-kysely
+npm install
+```
+
+### Environment variables
+
+We'll need to set up a few environment variables. Create a `.env` file in the root of your project and add the following. Resend values are pulled from their documentation on [SMTP Sending](https://resend.com/docs/send-with-smtp)
+
+```bash
+DATABASE_URL= 
+RESEND_API_KEY=
+
+# Next Auth Config
+NEXTAUTH_URL=
+NEXTAUTH_SECRET=
+
+# Resend Configuration
+EMAIL_SERVER_USER=resend
+EMAIL_SERVER_HOST=smtp.resend.com
+EMAIL_SERVER_PORT=25
+EMAIL_FROM= #Email Address from a domain that you own
+```
+
+Before you can send any emails, you'll need a domain name. In my case, I'm using my own domain `ivanleo.com`. Once you've done so, just head over to [Resend](resend.com) and sign up for an account. 
+
+Once you've signed up, you'll need to verify your domain - just follow the instructions on `Resend` to do so. Once you've verified your domain, you'll need to get hold of a database u can use. I recommend using Supabase but in this example, I'm using [Neon](https://neon.tech/) which provides a serverless Postgres instance for you to use. 
+
+<Callout>
+If you're using something like Neon or Supabase, make sure to use a pooled connection. This is because Next Auth will use a serverless lambda by default to connect to your database which means that during peak traffic, it might cause you to run out of connections.
+</Callout>
+
+Once you've done with these two steps, you should have 
+1. A database url : This should look like `postgres://<url here>`. <b>Make sure to append `?pgbounder=true` to the end of your database url if you're using neon. For some reason, this helps prisma to solve some connection issues, not sure why.</b>
+2. A Resend API key 
+
+### Database Configuration 
+
+Next, you'll need to configure your database. For this, I like using Prisma for a few reasons
+
+1. It's the easiest tool to use to setup a database - just use `npx prisma db push`
+2. `Prisma Studio` is honestly a fantastic tool to explore your database 
+3. `Kysely` provides an easy tool to hook into the database generation proccess - [Prisma Kysely](https://github.com/valtyr/prisma-kysely)
+
+If you've cloned the repo above, the file is located in `prisma/schema.prisma`. If you're using your own project, you can just copy the file over. 
+
+<CodeTitle lang="ts" title="auth.ts" />
+{/* ```ts
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-kysely"
+
+  // Optionally provide a destination directory for the generated file
+  // and a filename of your choice
+  output       = "../src/db"
+  fileName     = "types.ts"
+  // Optionally generate runtime enums to a separate file
+  enumFileName = "enums.ts"
+}
+
+model Account {
+  id                String  @id @default(dbgenerated("gen_random_uuid()"))
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(dbgenerated("gen_random_uuid()"))
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            String    @id @default(dbgenerated("gen_random_uuid()"))
+  name          String?
+  email         String?   @unique
+  emailVerified DateTime?
+  image         String?
+  accounts      Account[]
+  sessions      Session[]
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
+``` */}
+
+Once you've initialised this, you can then proceed to run the command 
+
+```bash
+npx prisma db push 
+```
+
+Prisma will then connect to your database, configure the tables and then generate the relevant kysely types. Note here that we're using `@default(dbgenerated("gen_random_uuid()"))` to generate our unique primary key for our Account, User and Session tables.
+
+### Next Auth Configuration
+
+Now that we've configured our database, let's now configure `NextAuth`. To do so, we'll need to create a file called `[...nextauth].ts` in our `pages/api/auth` folder.
+
+<CodeTitle lang="ts" title="auth.ts" />
+```ts
+
+import { NextAuthOptions } from "next-auth";
+import EmailProvider from "next-auth/providers/email";
+import { Resend } from 'resend';
+import { KyselyAdapter } from "@auth/kysely-adapter";
+import { db } from "@/lib/db";
+import NotionMagicLinkEmail from "../../emails/emails/notion-magic-link";
+import { siteConfig } from "./site";
+
+
+const resend = new Resend(process.env.RESEND_API_KEY);
+
+
+const providerConfig = EmailProvider({
+  server: {
+    host: process.env.EMAIL_SERVER_HOST,
+    port: process.env.EMAIL_SERVER_PORT,
+    auth: {
+      user: process.env.EMAIL_SERVER_USER,
+      pass: process.env.RESEND_API_KEY,
+    },
+  },
+  from: process.env.EMAIL_FROM,
+
+  sendVerificationRequest: async ({ identifier, url, provider }) => {
+    try {
+      const isDevOrStaging = process.env.NODE_ENV === "development" || process.env.VERCEL_ENV === "preview"
+      const emailAddress = isDevOrStaging ? "delivered@resend.dev" : identifier;
+
+
+      //@ts-ignore
+      const data = await resend.emails.send({
+        from: // fill this in,
+        to: [emailAddress],
+        subject: `Your welcome email to ${siteConfig.name}`,
+        react: NotionMagicLinkEmail({ loginUrl: url }),
+        headers: {
+          "X-Entity-Ref-ID": new Date().getTime() + "",
+        }
+      });
+
+      console.log(data);
+    } catch (error) {
+      console.error(error);
+    }
+  },
+});
+
+export const authOptions: NextAuthOptions = {
+  providers: [providerConfig],
+  session: {
+    strategy: "jwt",
+  },
+  //@ts-ignore
+  adapter: KyselyAdapter(db),
+  pages: {
+    signIn: "/login"
+  }
+}
+```
+
+We first create a new resend object 
+
+```ts
+const resend = new Resend(process.env.RESEND_API_KEY);
+```
+
+We then configure it such that we use the email provider 
+
+```ts
+const providerConfig = EmailProvider({
+  server: {
+    host: process.env.EMAIL_SERVER_HOST,
+    port: process.env.EMAIL_SERVER_PORT,
+    auth: {
+      user: process.env.EMAIL_SERVER_USER,
+      pass: process.env.RESEND_API_KEY,
+    },
+  },
+  from: process.env.EMAIL_FROM,
+
+  sendVerificationRequest: async ({ identifier, url, provider }) => {
+    try {
+      const isDevOrStaging = process.env.NODE_ENV === "development" || process.env.VERCEL_ENV === "preview"
+      const emailAddress = isDevOrStaging ? "delivered@resend.dev" : identifier;
+
+
+      //@ts-ignore
+      const data = await resend.emails.send({
+        from: // fill this in,
+        to: [emailAddress],
+        subject: `Your welcome email to ${siteConfig.name}`,
+        react: NotionMagicLinkEmail({ loginUrl: url }),
+        headers: {
+          "X-Entity-Ref-ID": new Date().getTime() + "",
+        }
+      });
+
+      console.log(data);
+    } catch (error) {
+      console.error(error);
+    }
+  },
+});
+```
+
+Note that we configure our provider such that whenever we are in a non-prod environment, we send it to the resend test email address at `delivered@resend.dev`. 
+
+```ts
+const isDevOrStaging = process.env.NODE_ENV === "development" || process.env.VERCEL_ENV === "preview"
+const emailAddress = isDevOrStaging ? "delivered@resend.dev" : identifier;
+```
+
+> You can find the test email I'm using [here](https://github.com/ivanleomk/next-auth-resend-kysely/blob/main/emails/emails/notion-magic-link.tsx) written in React-Email.
+
+We then configure our NextAuth options such that we use the Kysely adapter. I couldn't get the types to match right so I had to use `//@ts-ignore` to ignore the types. But I've tested it and it works fine so far.
+
+```ts
+export const authOptions: NextAuthOptions = {
+  providers: [providerConfig],
+  session: {
+    strategy: "jwt",
+  },
+  //@ts-ignore
+  adapter: KyselyAdapter(db),
+  pages: {
+    signIn: "/login"
+  }
+}
+```
+
+If you haven't installed the Kysely Adapter, you can do so by running the command which was taken from the [Auth.Js documentation](https://authjs.dev/reference/adapter/kysely)
+
+```bash
+npm install kysely @auth/kysely-adapter
+```
+
+### Middleware 
+
+Lastly, we just need to add in a `middleware.ts` file in our `src` folder and next auth will work as needed ( Already included in the repo )
+
+```ts
+export { default } from "next-auth/middleware";
+
+export const config = {
+  matcher: ["/dashboard/:path*"],
+};
+```
+
+## Conclusion
+
+I hope this helped quite a fair bit in setting up authentication in your web application. I spent a good 1-2 days trying to figure out everything and this would have really been useful for me.
