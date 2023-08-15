@@ -9,7 +9,12 @@ description: Revising my original article on implementing magic links with Next-
 
 ## Introduction
 
+
 I recently wrote an article on how to implement magic links with Next-Auth, NextJS and Prisma. I've since discovered a couple of libraries that make the process a lot easier. This article will show you how to implement magic links with Next-Auth, NextJS, Resend and Kysely.
+
+<Callout>
+I fixed everything together into a template which you can clone and use to start your own project [here](https://github.com/ivanleomk/next-auth-resend-kysely)
+</Callout>
 
 Original exploration was inspired by Dax's tweet below
 
@@ -358,11 +363,11 @@ and we can now use the hooks provided by next auth such as `useSession` and `get
 We've got the bare bones of next auth done - now there's just one small problem left. Whenever we call `getServerSession()` or `getSession()`, we get a session object that consists of the following type
 
 ```ts
-// type Session = {
-//   name: string;
-//   email: string;
-//   picture: string;
-// }
+type Session = {
+  name: string;
+  email: string;
+  picture: string;
+}
 ```
 
 This is nice but we're missing the `id` field which we need to query our database. To do so, we'll need to add in a custom `jwt` and `session` callback to our `auth.ts` file. 
