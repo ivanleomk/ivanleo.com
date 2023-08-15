@@ -1,0 +1,309 @@
+---
+title: Uploading files in NextJS to R2 
+date: 2023-08-15
+categories:
+  - FastAI
+  - Machine Learning
+description: How to upload a files to R2 when working with Next13's new app directory.
+---
+
+## Introduction 
+
+A while back, I experimented a bit with R2 to try and figure out how I could use cloudflare workers to configure uploads to R2. I was able to get it working but it took quite a fair bit of effort. I was also not able to get it working with NextJS's new app directory and had to resort to using S3 and a nextjs package [next-s3-upload](https://next-s3-upload.codingvalue.com/). 
+
+Recently, i started working on implementing file uploads again in a new project ( [Prep with AI](http://www.prepwithai.com) ) and I was able to get it working with R2 and NextJS's new app directory. I thought I would share the steps I took to get it working.
+
+Here's the quick guide to setting up R2 to work with NextJS using the AWS-S3 API that Cloudflare is now compatible with. I assume that you 
+
+- Have a rough understanding of what Zod is 
+- Have used NextJS before
+- Are familiar to some degree with an API
+
+## R2
+
+### Creating our Bucket
+
+In order to upload to R2, you'll first need to create a new bucket on [cloudflare](https://www.cloudflare.com/en-gb/). Creating a new account is free and they have a pretty generous free tier that you can take advantage of. 
+
+In this case, they give ~10GB of storage free and most importantly *eggress is free*. That means that you don't have to pay anything when people download or serve your data from your bucket. So of course, being the penny pinching software developer I am, that definitely made it worth a shot.
+
+Once you've created your account, you can create a new bucket by clicking on the "Create Bucket" button on the top right of the screen. Just give it a name and you can select the region of your choice.
+
+Now that you've created a new bucket, go to the your bucket settings under *R2* > *Overview* > *Bucket Name* > *Settings* and scroll down to the CORS section. Now you'll want to paste in this json configuration
+
+<Callout>
+When configuring cors, you need to make sure you add in the *AllowedHeader* configuration. Otherwise, you'll just keep getting CORS errors. Shoutout to [Kian's blog post on configuring Cors](https://kian.org.uk/configuring-cors-on-cloudflare-r2/) for helping me to figure it out.
+</Callout>
+
+```json
+[
+  {
+    "AllowedOrigins": [
+      "*"
+    ],
+    "AllowedMethods": [
+      "PUT",
+      "DELETE"
+    ],
+    "AllowedHeaders": [
+      "content-type"
+    ],
+    "MaxAgeSeconds": 3000
+  }
+]
+```
+
+This will configure your bucket to accept all `PUT` and `DELETE` operations from users as long as they have a valid API key. Now, click *Save* and navigate back to the *Overview* section.
+
+### Getting R2 Credentials
+
+Now, we need to configure a new API key for our bucket. This will allow us to upload files to our bucket.
+
+<KommyImage src = "/images/R2_API_SCREEN.png" width={600} height ={600} />
+
+Navigate to *R2* > *Overview* > *Manage R2 API Tokens* and click on *Create API Key*. You'll then want to give your API Key a name. You can leave all of the other variables as they are.
+
+> Be very careful with your R2 key, once it's compromised, anyone can upload files to your bucket. That might be a bit... troublesome in the long run
+
+If you're using a production key, I suggest giving more granular permissions. But in general, here's what I recommend 
+
+- Permissions : Object Read & Write
+- Specify Bucket(s) : Apply to specific buckets only
+- TTL : Grant for a limited period of time
+
+Once you've done so, you should arrive at a similar screen as below - with a new R2 Token, Access Key and R2 secret access key 
+
+<KommyImage src = "/images/Created_R2_Token.png" width={600} height ={600} />
+
+Make sure to note these down since you won't be seeing them again. 
+
+## Setting up NextJS
+
+### Installing and creating our first Server Action
+
+Now let's get our Next JS Application out of the way. I'm going to assume that you've already created a new NextJS application. If not, you can follow the [NextJS tutorial](https://nextjs.org/learn/basics/create-nextjs-app) to get started.
+
+I'm also using the server actions to do some of the heavy lifting. If you're not familiar with server actions, you can read more about them [here](https://nextjs.org/docs/app/building-your-application/data-fetching/server-actions).
+
+Make sure to modify your `next.config.js` so that it supports this by going to 
+
+```bash showLineNumbers {5-7}
+/** @type {import('next').NextConfig} */
+const nextConfig = {
+  reactStrictMode: true,
+  swcMinify: true,
+  experimental: {
+    serverActions: true,
+  },
+}
+
+module.exports = nextConfig
+```
+
+You'll need to install a few packages 
+
+```bash
+npm install zact @aws-sdk/client-s3 @aws-sdk/s3-request-presigner @aws-sdk/signature-v4-crt zod
+```
+
+You'll also need to create a new `.env` file.
+
+```bash
+R2_ACCOUNT_ID=
+S3_UPLOAD_KEY=
+S3_UPLOAD_SECRET=
+S3_UPLOAD_BUCKET=
+S3_UPLOAD_REGION=
+```
+
+Let's create a simple UI which we will be using for our file upload. For this, go to the root `page.tsx` file and paste in this code.
+
+<CodeTitle lang="ts" title = "page.tsx" />
+```ts
+export default function Home() {
+  return (
+    <div >
+      <p>Upload Files</p>
+      <form>
+        <label htmlFor="file-upload">File Upload</label>
+        <br />
+        <input id="file-upload" type="file" />
+        <br />
+        <div style={{
+          marginBottom: "10px"
+        }} />
+        <button>Submit</button>
+      </form>
+    </div>
+  )
+}
+```
+
+Now let's create a new file called `r2.ts` which will contain our server action. If you've never touched server actions before, they're a new way for us to configure a backend api without declaring a route. 
+
+All we need to do is to use the `Use Server` annotation at the top of our file and the NextJS compiler takes care of everything else for us. Let's try creating a server action that takes the current file and logs out its name when we submit it. To do so, we can use the `Zact` package that's provided by Theo Brown. 
+
+
+```ts
+"use server"
+import {zact} from 'zact/server'
+
+const fileSchema = z.object({
+  name: z.string(),
+})
+
+export const uploadFile = zact(fileSchema)(async (input)=>{
+  console.log(input.name)
+  return {
+    name: input.name
+  }
+})
+```
+
+We can then hook this up to our front end by simply importing the `uploadFile` function into our component and calling it like a normal function.
+
+<CodeTitle lang="ts" title="page.tsx" />
+```ts
+"use client"
+import { uploadFile } from '@/lib/s3'
+import { FormEvent, useState } from 'react'
+
+export default function Home() {
+  const [file, setFile] = useState<File | null>(null)
+
+  const handleFileUpload = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    if (!file) return
+    uploadFile({ name: file.name }).then(res => {
+      console.log(res)
+    })
+  }
+
+  return (
+    <div >
+      <p>Upload Files</p>
+      <form onSubmit={(e) => handleFileUpload(e)}>
+        <label htmlFor="file-upload">File Upload</label>
+        <br />
+        <input
+          multiple={false}
+          id="file-upload" type="file" onChange={(e) => {
+            if (!e.target.files || e.target.files.length === 0) return
+            setFile(e.target.files[0])
+          }} />
+        <br />
+        <div style={{
+          marginBottom: "10px"
+        }} />
+        <button>Submit</button>
+      </form>
+    </div>
+  )
+}
+```
+
+We can see that our server action works when we upload a file and click submit and see it logged on the server console.
+
+## R2 Integration 
+
+### Getting a Presigned URL
+
+> Please configure the `.env` variables as shown above and the CORS policy as mentioned earlier. If not, this won't work at all.
+
+Let's start by first configuring a S3 client and generating a presigned URL. We can do so by adding the new definition into our `r2.ts` file.
+
+
+```ts showLineNumbers {8-15,19-21}
+"use server"
+import {zact} from 'zact/server'
+
+const fileSchema = z.object({
+  name: z.string(),
+})
+
+const S3 = new S3Client({
+  region: "auto",
+  endpoint: `https://${process.env.R2_ACCOUNT_ID}.r2.cloudflarestorage.com`,
+  credentials: {
+    accessKeyId: process.env.R2_UPLOAD_KEY as string,
+    secretAccessKey: process.env.R2_UPLOAD_SECRET as string,
+  },
+});
+
+export const uploadFile = zact(fileSchema)(async (input)=>{
+  
+  const preSignedUrl = await getSignedUrl(S3, new PutObjectCommand({ Bucket: process.env.R2_UPLOAD_BUCKET, Key: input.fileName }), {
+      expiresIn: 3600
+  })
+
+  console.log(preSignedUrl)
+
+  return {
+    url: preSignedUrl
+  }
+})
+```
+
+Let's log out the value of `preSignedUrl` and see what we get. 
+
+```bash
+https://<S3_Bucket_name>.<Account_ID>.r2.cloudflarestorage.com/<Key Valye>?X-Amz-Algorithm=.....
+```
+
+This is what's known as a pre-signed url. It helps us to prevent the leakage of our security credentials by providing a one-time use url that we can use to upload our file.
+
+### Uploading our file
+
+Now that we have a working endpoint that gives us a route to use, we can just make a `PUT` request to the original bucket that we created and we'll be able to upload our file. 
+
+<CodeTitle lang="ts" title="page.tsx" />
+```ts showLineNumbers {12-16}
+"use client"
+import { uploadFile } from '@/lib/r2'
+import { FormEvent, useState } from 'react'
+
+export default function Home() {
+  const [file, setFile] = useState<File | null>(null)
+
+  const handleFileUpload = (e: FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
+    if (!file) return
+    uploadFile({ name: file.name }).then(res => {
+      const url = res.url
+      return fetch(url, {
+        method: "PUT",
+        body: file
+      })
+    }).then((res) => {
+      console.log(res)
+    })
+  }
+
+  return (
+    <div >
+      <p>Upload Files</p>
+      <form onSubmit={(e) => handleFileUpload(e)}>
+        <label htmlFor="file-upload">File Upload</label>
+        <br />
+        <input
+          multiple={false}
+          id="file-upload" type="file" onChange={(e) => {
+            if (!e.target.files || e.target.files.length === 0) return
+            setFile(e.target.files[0])
+          }} />
+        <br />
+        <div style={{
+          marginBottom: "10px"
+        }} />
+        <button>Submit</button>
+      </form>
+    </div>
+  )
+}
+```
+
+Let's now test our endpoint by making an API call
+
+<KommyImage src ="/images/file-upload-success.gif" width={600} height = {600} />
+
+We can then navigate to our R2 Bucket to verify that the file has indeed been uploaded.

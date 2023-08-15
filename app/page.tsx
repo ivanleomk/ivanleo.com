@@ -26,6 +26,11 @@ export default function Home() {
           social media accounts. Feel free to drop me a dm @ivanleomk on twitter
           for any collaboration, inquiries or more.
         </p>
+        <p className="mt-2 text-sm leading-6 px-4">
+          To see a list of everything that I&apos;ve been working on for the past few months to understand the AI Space, you can check out my <Link
+            className="underline hover:font-bold cursor-pointer transition duration-600 ease-in-out"
+            href="/work-log">Work Log</Link>
+        </p>
 
         <hr className="my-8 border-slate-200 w-40 mx-auto" />
         <SectionHeader title="" description="Recent Posts">
