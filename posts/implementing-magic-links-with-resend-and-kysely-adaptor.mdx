@@ -299,6 +299,161 @@ export const config = {
 };
 ```
 
+### NextAuthProvider 
+
+Now we need to add in the `NextAuthProvider` to our `layout.tsx` file so that we can configure some of the client side hooks such as `getSession`. To do so, just create a new file called `NextAuthProvider`
+
+<CodeTitle lang="ts" title = "NextAuthProvider.tsx" />
+```tsx
+"use client";
+
+import { SessionProvider } from "next-auth/react";
+
+type Props = {
+  children?: React.ReactNode;
+};
+
+export const NextAuthProvider = ({ children }: Props) => {
+  return <SessionProvider>{children}</SessionProvider>;
+};
+```
+
+We can then add it into our root layout file at `src/layout.tsx` 
+
+```ts showLineNumbers {21,25}
+import './globals.css'
+import type { Metadata } from 'next'
+import { Inter } from 'next/font/google'
+import Header from '@/components/layout/Header'
+import { Inter as FontSans } from "next/font/google"
+import localFont from "next/font/local"
+import { cn } from '@/lib/utils'
+import { Toaster } from '@/components/ui/toaster'
+import { siteConfig } from '@/config/site'
+import { NextAuthProvider } from '@/provider/NextAuthProvider'
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode
+}) {
+
+  return (
+    <html lang="en" suppressHydrationWarning>
+      <head />
+      <NextAuthProvider>
+        <body>
+        // Other defied values here
+        </body>
+      </NextAuthProvider>
+    </html>
+  )
+}
+```
+
+and we can now use the hooks provided by next auth such as `useSession` and `getSession` in our application.
+
+### Adding an ID to the session
+
+We've got the bare bones of next auth done - now there's just one small problem left. Whenever we call `getServerSession()` or `getSession()`, we get a session object that consists of the following type
+
+```ts
+// type Session = {
+//   name: string;
+//   email: string;
+//   picture: string;
+// }
+```
+
+This is nice but we're missing the `id` field which we need to query our database. To do so, we'll need to add in a custom `jwt` and `session` callback to our `auth.ts` file. 
+
+```ts
+// rest of the auth.ts file 
+export const authOptions: NextAuthOptions = {
+  providers: [providerConfig],
+  session: {
+    strategy: "jwt",
+  },
+  //@ts-ignore
+  adapter: KyselyAdapter(db),
+  pages: {
+    signIn: "/login"
+  },
+  callbacks: {
+    session: async ({ session, token, user }) => {
+      if (token) {
+        session.user.id = token.id
+        session.user.name = token.name
+        session.user.email = token.email
+        session.user.image = token.picture
+      }
+
+      return session
+    },
+    jwt: async ({ token, user }) => {
+      if (!token.email) {
+        return token
+      }
+
+      const dbUser = await db.selectFrom("User").where("email", "=", token.email).selectAll().executeTakeFirst()
+
+      if (!dbUser) {
+        if (user) {
+          token.id = user?.id
+        }
+        return token
+      }
+
+      return {
+        id: dbUser.id,
+        name: dbUser.name,
+        email: dbUser.email,
+        picture: dbUser.image,
+      }
+    },
+  }
+}
+```
+
+This will in turn ensure that whenever we fetch user information, we will get the id along with the rest of the data. We now need to add in a new type definition, so create a new file called `next-auth.d.ts` in your types folder 
+
+<CodeTitle lang="ts" title="NextAuth Type" />
+```ts
+import { User } from "next-auth"
+import { JWT } from "next-auth/jwt"
+
+type UserId = string
+
+declare module "next-auth/jwt" {
+  interface JWT {
+    id: UserId
+  }
+}
+
+declare module "next-auth" {
+  interface Session {
+    user: User & {
+      id: UserId
+    }
+  }
+}
+```
+
+Let's also create a nifty utility function that wraps `getServerSession` with the right `authOptions`. This is because `getServerSession` without the `authOptions` will return the session object without the `id` field, so for convinience, we define a new function which does this for us.
+
+```
+import { authOptions } from "@/config/auth";
+import { getServerSession } from "next-auth"
+
+export const getUser = async () => {
+  const session = await getServerSession(authOptions);
+  if (!session) {
+    return null
+  }
+  return session.user
+}
+```
+
 ## Conclusion
 
 I hope this helped quite a fair bit in setting up authentication in your web application. I spent a good 1-2 days trying to figure out everything and this would have really been useful for me.
