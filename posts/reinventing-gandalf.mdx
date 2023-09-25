@@ -16,7 +16,7 @@ A while ago, a company called Lakera released a challenge called [Gandalf on Hac
 Some time after their challenge had been relased, they were then kind enough to release both the solution AND a rough overview of how the challenge was developed. You can check it out [here](https://www.lakera.ai/insights/who-is-gandalf). Inspired by this, I figured I'd try to reproduce it to some degree on my own in a challenge I called The Chinese Wall with [Peter Mekhaeil
 ](https://twitter.com/petermekh) for our annual company's coding competition. We will be releasing the code shortly.
 
-Participants were asked to try and extract a password from a LLM that we provided. We also provided a discord bot that was trained on the challenge documentation which participants could use to ask questions to. A write up on this bot will be provided in a later article.
+Participants were asked to try and extract a password from a LLM that we provided. We also provided a discord bot that was trained on the challenge documentation which participants could use to ask questions to. 
 
 Here's a quick snapshot of it in action 
 
@@ -632,7 +632,7 @@ def download_model_weights() -> None:
     move_cache()
 ```
 
-However, this time, we make sure to install our dependencies of `sentence-transformers`, `replicate` and `pinecone-client` so that we can conenct to our model.
+However, this time, we make sure to install our dependencies of `sentence-transformers`, `replicate` and `pinecone-client` so that we can connect to our model.
 
 ```py
 image = (
