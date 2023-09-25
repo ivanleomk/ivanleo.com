@@ -42,7 +42,7 @@ export default function RootLayout({
         }}
       />
       <body className="">
-        <header className="container mx-auto max-w-4xl">
+        <header className="container mx-auto max-w-6xl">
           <div className="w-full flex flex-col items-start sm:flex-row sm:items-center sm:justify-between border-b py-4 mx-4">
             <div className="flex items-center space-x-2">
               <div className="block h-10 w-10 overflow-hidden rounded-full">
@@ -74,9 +74,9 @@ export default function RootLayout({
               <Link href="/posts" className="text-sm hover:font-semibold">
                 Posts
               </Link>
-              <Link href="/notes" className="text-sm hover:font-semibold">
+              <a href="https://dump.ivanleo.com/" target="_blank" rel="noopener" className="text-sm hover:font-semibold">
                 Notes
-              </Link>
+              </a>
               <Link href="/work-log" className="text-sm hover:font-semibold">
                 Work Log
               </Link>
