@@ -24,7 +24,7 @@ The model uses Open AI's GPT 3.5 under the hood with the instructor library for 
 
 ## The Challenge
 
-On a high level, our challenge functions almost identically to that of Gandalf. However,We have slightly less 5 levels and they had the same structure. 
+On a high level, our challenge functions almost identically to that of Gandalf. However, we have slightly less levels than them - since they have 7 and more money to spend. 
 
 <KommyImage src = "/images/structure.png" width = {700} height = {700} alt = "Gandalf Structure" />
 
@@ -427,6 +427,271 @@ def challenge_5(prompt: str):
     result = response.choices[0].message.content
     return {"result": result}
 ```
+
+## The Bot
+
+We also provided a discord bot for participants to be able to ask questions to that utilised the llama-13b-chat-hf model to respond to questions. Here's a quick screen grab of it in action.
+
+<KommyImage src = "/images/demo.gif" alt = "Chatbot Demo" />
+
+Here's a rough overview of how the chatbot worked.
+
+<KommyImage src="/images/architecture.png" alt = "Discord Bot Architecture" />
+
+1. **Heroku Server** : We have a persistent process which is connected to the discord server. This listens to any messages that are sent to the server and then sends it to the llama model.
+2. **Modal Embedding Service** : This exposes an endpoint which will take in a user's question and embed it using the `thenlper/gte-large` embedding model. 
+3. **Pinecone Index**: We store information on our documentation inside a pinecone index. This allows us to quickly retrieve the most relevant documentation for a given question.
+4. **Replicate Llama-13b Hosted Endpoint**: This is used to generate a response to the user's original question with a consolidated prompt that is generated using the documentation that we have stored in our pinecone index and a system prompt.
+
+Let's walk through each of them step by step.
+
+### Heroku Server 
+
+In order to implement the discord bot, I found a library called `pycord` that provides a simple wrapper around the discord api to build chatbots. 
+
+We can spin up a quick bot by using the following snippet.
+
+```py
+import discord
+import re
+import aiohttp
+from dotenv import load_dotenv
+import os
+
+
+intents = discord.Intents.default()
+intents.message_content = True
+load_dotenv()
+client = discord.Client(intents=intents)
+```
+
+We can then create a listener that will listen to any messages that are sent to the server by using the `@client.event` annotation 
+
+```py
+@client.event
+async def on_message(message):
+    if message.author == client.user:
+        return
+
+    if message.channel.name != "the-chinese-wall":
+        return
+
+    if not any(mention.id == client.user.id for mention in message.mentions):
+        return
+
+    async with message.channel.typing():
+        prev_messages = await get_last_n_message(message)
+        formatted_prev_message = (
+            "USER:" + "\nUSER:".join(prev_messages) if len(prev_messages) > 0 else ""
+        )
+        print(formatted_prev_message)
+        payload = {
+            "prompt": message.content,
+            "prev_messages": formatted_prev_message,
+        }
+
+        res = await fetch_response(os.environ.get("ENDPOINT"), payload)
+
+        await message.reply(res["results"])
+```
+
+We also tried to support a bit of memory in the bot by grabbing the last `n` messages that a user had sent in the channel. This was because it was highly likely that users had context that they had provided in previous messages that would be useful for the model to generate a response. 
+
+This was done using this simple function below where we grab all of the user's messages in the channel and then filter it to get the last 3 messages that mention the bot.
+
+```py
+async def get_last_n_message(message, n=3):
+    """
+    We assume that users will send messages in quick succession. If not
+    """
+    messages = await message.channel.history(limit=100).flatten()
+
+    # Filter the messages to get the last 3 messages sent by the user that also mention the bot
+    user_messages = [
+        msg
+        for msg in messages
+        if msg.author == message.author and client.user.mentioned_in(msg)
+    ]
+
+    res = []
+    for i in range(n):
+        if i >= len(user_messages):
+            break
+        res.append(remove_mentions(user_messages[i].content))
+    return res[1:] if len(res) > 1 else res
+```
+
+### Pinecone Index
+
+Out of the box, Langchain provides a simple markdown text splitter that allows you to split text by headers. This was useful for us since we could then use the headers as our search terms. 
+
+```py
+from langchain.text_splitter import MarkdownHeaderTextSplitter
+
+headers_to_split_on = [
+    ("#", "Header 1"),
+    ("##", "Header 2"),
+]
+
+markdown_splitter = MarkdownHeaderTextSplitter(headers_to_split_on=headers_to_split_on)
+md_header_splits = markdown_splitter.split_text(chinese_wall)
+input_texts = [i.page_content for i in md_header_splits]
+```
+
+We could then embed each of these individual chunks by using the `sentence-transformers` library.
+
+```py
+from sentence_transformers import SentenceTransformer
+model = SentenceTransformer('thenlper/gte-large')
+embeddings = model.encode(input_texts)
+```
+
+We then store these embeddings in a pinecone index which allows us to quickly retrieve the most relevant documentation for a given question. 
+
+```py
+import pinecone
+
+pinecone.init(
+	api_key='<api key goes here>',
+	environment='asia-northeast1-gcp'
+)
+
+index = pinecone.Index('chinesewall')
+
+index_col = []
+pinecone.delete_index('chinesewall')
+pinecone.create_index('chinesewall',dimension=1024)
+for val in md_header_splits:
+    metadata = val.metadata
+    id = metadata['Header 2'] if 'Header 2' in metadata else metadata['Header 1']
+    embedding = model.encode([val.page_content])[0]
+    embedding_list = embedding.tolist()  # Convert ndarray to list
+    index_col.append((id, embedding_list, {"text": val.page_content}))
+
+index = pinecone.Index('chinesewall')
+index.upsert(index_col)
+```
+
+This allows us to be able to encode participant queries and in turn get back responses that contain both the cosine similarity score and the original snippet text. 
+
+```json
+{'matches': [{'id': 'Evaluation Criteria',
+              'metadata': {'text': 'In order to submit your answers to our '
+                                   'challenge, you need to create an endpoint '
+                                   'a public facing server that returns the '
+                                   'passwords for each level in a JSON object. '
+                                   'This should have the route of '
+                                   '`/chinese-wall`. You can trigger this '
+                                   'submission on the competition website '
+                                   'which will handle the integration with our '
+                                   'endpoint.  \n'
+                                   'The JSON response should look like this  \n'
+                                   '```json\n'
+                                   '{\n'
+                                   '"1": "password1",\n'
+                                   '"2": "password2",\n'
+                                   '"3": "password3",\n'
+                                   '"4": "password4",\n'
+                                   '"5": "password5"\n'
+                                   '}\n'
+                                   '```  \n'
+                                   'You will earn a total of 20 points for '
+                                   'each correct password, with a maximum of '
+                                   '100 points avaliable.'},
+              'score': 0.807266116,
+              'values': []}]}
+```
+
+### Embedding Service and Replicate 
+
+Our embedding service was similarly hosted on Modal since it provides an easy way out of the box to host hugging face models. Similar to our classifier, we can reuse the same code to download our model weights. 
+
+```py
+from modal import Stub, web_endpoint, Image, Secret
+from pydantic import BaseModel
+
+"""
+This is a function which take a string and return it's embedding
+"""
+
+MODEL_NAME = "thenlper/gte-large"
+
+
+def download_model_weights() -> None:
+    from huggingface_hub import snapshot_download
+    from transformers.utils import move_cache
+    from sentence_transformers import SentenceTransformer
+
+    snapshot_download(repo_id=MODEL_NAME)
+
+    # We also download the onnx model by running this
+    model = SentenceTransformer(MODEL_NAME)
+
+    move_cache()
+```
+
+However, this time, we make sure to install our dependencies of `sentence-transformers`, `replicate` and `pinecone-client` so that we can conenct to our model.
+
+```py
+image = (
+    Image.debian_slim()
+    .pip_install(
+        "transformers",
+        "torch",
+        "huggingface_hub",
+        "sentence_transformers",
+        "pinecone-client",
+        "replicate",
+    )
+    .run_function(download_model_weights)
+)
+
+
+stub = Stub("embedding", image=image)
+```
+
+We can then define a simple endpoint using the `web_endpoint` decorator. This will allow us to host our function on a simple web endpoint. Note here the use of `secrets` to securely access API keys using modal.
+
+```py
+@stub.function(secrets=[Secret.from_name("pinecone"), Secret.from_name("replicate")])
+@web_endpoint(method="POST")
+def embed(input: PromptInput):
+    from sentence_transformers import SentenceTransformer
+    import pinecone
+    import os
+    import replicate
+
+    pinecone.init(
+        api_key=os.environ["PINECONE_API_KEY"], environment="asia-northeast1-gcp"
+    )
+    index = pinecone.Index("chinesewall")
+
+    model = SentenceTransformer(MODEL_NAME)
+    embedding = model.encode([input.prompt])[0].tolist()
+    results = index.query(embedding, top_k=2, include_metadata=True)
+
+    context = [i["metadata"]["text"] for i in results["matches"]]
+    combined_context = "\n-".join(context)
+
+    formatted_system_prompt = f"As an AI assistant for the Chinese Wall Coding Competition organized by UBS, respond to participants' questions with concise, 2-sentence answers. Start with 'Hi there!' and only use information from the provided context.{combined_context}\n If unsure, reply with 'I don't have a good answer'. here are the past 3 messages the user has sent: {input.prev_messages}."
+
+    print(formatted_system_prompt)
+    output = replicate.run(
+        "meta/llama-2-13b-chat:f4e2de70d66816a838a89eeeb621910adffb0dd0baba3976c96980970978018d",
+        input={
+            "system_prompt": formatted_system_prompt,
+            "prompt": f"Please generate a response to this question : {input.prompt}",
+        },
+        max_tokens=2000,
+        temperature=0.75,
+    )
+
+    list_output = "".join(list(output))
+
+    return {"results": list_output}
+```
+
+We set a maximum token length of `2000` so that we can generate longer responses ( in the event that we need to show example payload values ).
 
 ## Conclusion 
 
