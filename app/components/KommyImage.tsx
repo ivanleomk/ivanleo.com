@@ -7,6 +7,8 @@ export interface IKommyImage extends ImageProps {
   blogImage?: boolean;
   caption?: string;
   captionClassName?: string;
+  height?: number;
+  width?: number;
 }
 
 export default function KommyImage({
@@ -15,8 +17,8 @@ export default function KommyImage({
   className,
   blogImage = false,
   caption,
-  width,
-  height,
+  width = 600,
+  height = 600,
   captionClassName,
   ...rest
 }: IKommyImage) {
@@ -33,7 +35,7 @@ export default function KommyImage({
             className
           )}
         />
-      <figcaption
+        <figcaption
           className={clsxm(
             "mx-auto mt-2 max-w-xl text-center text-base italic text-gray-600",
             captionClassName
