@@ -9,7 +9,7 @@ description: How to simulate a red-team attack on your own models to improve the
 
 ## Introduction
 
-> The code for the challenge can be found [here](https://github.com/ivanleomk/The-Chinese-Wall) and a [live deployment](https://thechinesewall-3d869f30da82.herokuapp.com/experimentation) for the time being. I've also uploaded the code for the [discord bot](https://github.com/ivanleomk/chinese-wall-discord-bot/) if you're keen to see how we implemented it.
+> The code for the challenge can be found [here](https://github.com/ivanleomk/The-Chinese-Wall) and a [live deployment](https://thechinesewall-3d869f30da82.herokuapp.com/experimentation) for the time being. I've also uploaded the code for the [discord bot](https://github.com/ivanleomk/chinese-wall-discord-bot/) if you're keen to see how we implemented it. Note that sometimes the server might be down due to upstash connectivity issues so if it repeatedly fails then ping me and I'll restart the server.
 
 A while ago, a company called Lakera released a challenge called [Gandalf on Hacker News](https://news.ycombinator.com/item?id=35905876) which took the LLM community by storm. The premise was simple - get a LLM that they had built to reveal a password. This wasn't an easy task and many people spent days trying to crack it. 
 
@@ -291,7 +291,7 @@ prompt_injection_prompts = [
 
 Using a selection of questions that we had obtained from a small internal round of testing, we then generated around a few more prompts that we could use for our input guard. This yielded around 255 new prompts that we could use to train our clasifier. This yielded us a very trigger-happy BERT classifier you can play with [here](https://huggingface.co/ivanleomk/bert_password_sniffer). I find that certain prompts tend to trigger it if you use the right keywords.
 
-#### Hosting
+#### Hosting Bert
 
 However, my first attempts at hosting this proved slightly difficult since I had to download a huge transformer library, download my BERT model along with its other dependencies. That was until I discovered Modal which provides a way for you to containerize your functions ( even if they're huge ones like BERT ). 
 
@@ -453,6 +453,103 @@ def challenge_5(prompt: str):
 
     result = response.choices[0].message.content
     return {"result": result}
+```
+
+### Misc
+#### Rate Limiting
+When building this challenge, we noticed that there were two main problems we had to resolve 
+
+1. We needed a rate-limiter 
+2. We needed to capture participant data so that we could track and see what prompts were making it past our detection mechanisms.
+
+One of the main reasons why we needed rate-limiting was because we didn't want our Open AI bill to explode. We realised that we could perform this using a python package called [Fastapi Limiter](https://github.com/long2ice/fastapi-limiter). 
+
+All that we needed was a redis instance to capture IP addresses so that the rate limiting would work across deployments.
+
+Integrating it wasn't too difficult but upstash proved a bit tricky from time to time - sometimes the connection would drop once the challenge had recieved no traffic for some time. We solved this by using two separate fast api dependencies.
+
+First, we defined a function that we could use to establish a connection with the redis server
+
+```py
+import asyncio
+from fastapi import HTTPException
+import redis.asyncio as redis
+from fastapi_limiter import FastAPILimiter
+
+from settings import get_settings
+from fastapi_limiter.depends import RateLimiter
+
+async def reconnect_redis():
+    global redis_client
+    redis_client = redis.from_url(get_settings().REDIS_URL, encoding="utf-8", decode_responses=True)
+    await FastAPILimiter.init(redis_client)
+```
+
+We then used this in a simple async dependency that would run as a middleware in our route
+
+```py
+async def verify_redis_connection(retries=3) -> None:
+    for i in range(retries):
+        try:
+            r = await redis.from_url(get_settings().REDIS_URL)
+            await r.ping()
+            break
+        except Exception as e:
+            if i < retries - 1:
+                await reconnect_redis()
+                continue
+            else:
+                raise HTTPException(status_code=500, detail="Unable to connect to Redis")
+```
+
+We then integrated it using a simple `Depends` keyword that fastapi provides out of the box. Since `fastapi_limiter` provides a dependency function that applies rate limiting, we can just use the two together to make sure that our rate limiting redis instance is working before proceeding.
+
+<Callout>
+Note that FastAPI will evaluate and run your dependencies from left to right that you've specified. Hence, that's why we establish the connection first, before attempting to check the user's access to the API.
+</Callout>
+
+```py
+@app.post("/send-message",dependencies=[Depends(verify_redis_connection),Depends(RateLimiter(1,30))])
+def send_message(params: SendMessageParams):
+    level = params.level
+    prompt = params.prompt
+
+    if not prompt:
+        return {"result": "Prompt is empty"}
+    if not level:
+        return {"result": "Level is empty"}
+    ... rest of function
+```
+
+#### Logging 
+
+For logging, we mainly used two main things 
+
+1. Heroku's own logs 
+2. [Neon](https://neon.tech/) serverless postgres databases which provide on-demand postgres databases.
+
+We quickly learnt that heroku's logs aren't very good when we ran into production issues and that we should have definitely captured more information on user's IP addresses so that we could do more data analysis.
+
+We utilised a threaded connection pool so that connections would not overwhelm the neon database.
+
+```
+connection_pool = pool.ThreadedConnectionPool(
+    minconn=1, maxconn=10, dsn=get_settings().DATABASE_URL
+)
+
+
+def insert_prompt_into_db(prompt: str, level: str, response_result: str):
+    conn = connection_pool.getconn()
+    timestamp = datetime.utcnow()
+    try:
+        with conn.cursor() as cursor:
+            cursor.execute(
+                "INSERT INTO messages (level, prompt, response,timestamp) VALUES (%s, %s, %s,%s)",
+                (level, prompt, response_result, timestamp),
+            )
+        conn.commit()
+    finally:
+        connection_pool.putconn(conn)
 ```
 
 ## The Bot
@@ -729,5 +826,7 @@ Some papers which I think are relevant to this would be
 - [Llama 2](https://arxiv.org/abs/2307.09288) - They go into quite a bit of detail into the training proccess. The part that is relevant is on the reward model that they created using a modified llama-2 base model 
 - [Universal LLM Jailbreaks](https://arxiv.org/abs/2307.08715) - This talks a bit about what it takes to jailbreak propreitary models by using methods which have been fine-tuned on open source models 
 - [Anthropic's Constituitional AI Paper](https://arxiv.org/abs/2212.08073) - This sparked a good amount of conversation around whether it was enough to make a big difference. Notable that their final model was able to start out performing human annotators.
+
+Overall, I'd say this was a really fun project to build from start to finish. There's definitely a lot of room for improvement to build more robust and secure llm systems but it was nice to be able to apply everything that I had learnt in the last few months.
 
 I hope you enjoyed this short article and found it useful. If you have any questions, feel free to reach out to me on [twitter](https://twitter.com/ivanleomk). 

@@ -71,9 +71,10 @@ const useIntersectionObserver = (
 const TableOfContents = ({ source }: TOCProps) => {
   const headingLines = source
     .split("\n")
-    .filter((line) => line.match(/^##*\s/));
+    .filter((line) => line.match(/^#{1,5}\s/));
 
-  const generateSpacing = (level: 1 | 2 | 3 | 4) => {
+
+  const generateSpacing = (level: 1 | 2 | 3 | 4 | 5) => {
     switch (level) {
       case 1:
       case 2:
@@ -81,7 +82,9 @@ const TableOfContents = ({ source }: TOCProps) => {
       case 3:
         return "pl-6";
       case 4:
-        return "pl-10";
+        return "pl-12";
+      case 5:
+        return "pl-16"
     }
   };
 
@@ -100,7 +103,7 @@ const TableOfContents = ({ source }: TOCProps) => {
       };
     })
     .filter((item) => {
-      return item.level <= 4;
+      return item.level <= 5;
     });
 
   const [activeId, setActiveId] = useState<string>();
@@ -147,7 +150,7 @@ const TableOfContents = ({ source }: TOCProps) => {
                     className={clsxm(
                       heading.id === activeId ? "font-bold" : "font-normal",
                       generateSpacing(heading.level as 1 | 2 | 3 | 4),
-                      "mb-4 text-base text-slate-700 last:mb-6 hover:underline"
+                      "mb-4 text-base text-slate-700 last:mb-6 hover:underline text-wrap"
                     )}
                     onClick={(e) => {
                       e.preventDefault();
