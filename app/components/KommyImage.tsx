@@ -47,13 +47,17 @@ export default function KommyImage({
     );
   }
   return (
+    <div className = "flex items-center justify-center my-6">
+      
     <Image
-      className={clsxm("object-cover object-center", className)}
+      className={clsxm( className)}
       src={src}
       alt={alt}
       width={width}
       height={height}
       {...rest}
     />
+    
+    </div>
   );
 }

@@ -12,6 +12,9 @@ import Pre from "@/app/components/Pre";
 import { getAllTweetData } from "@/app/utils/tweet";
 import TableOfContents from "@/app/components/TableOfContent";
 import { Tweet } from "react-tweet";
+import 'katex/dist/katex.min.css';
+import { InlineMath, BlockMath } from 'react-katex';
+
 
 type Params = {
   name: string;
@@ -22,7 +25,8 @@ export const CodeBlocks = {
   CodeTitle,
   KommyImage,
   KommyLink,
-
+  InlineMath,
+  BlockMath,
   a: ({ ...props }: React.HTMLAttributes<HTMLAnchorElement>) => (
     <a
       className="animated-underline border-b border-dotted border-dark hover:border-dark/0"
@@ -129,6 +133,7 @@ const BlogPage = async ({ params }: { params: Params }) => {
       </div>
       <hr className="my-8 border-slate-200 w-40 mx-auto" />
       <div className="flex flex-col lg:flex-row w-full">
+
         <div className="mx-4 order-1 lg:order-2 w-full lg:w-auto">
           <TableOfContents source={post.body.raw} />
         </div>

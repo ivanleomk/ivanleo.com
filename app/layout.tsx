@@ -5,6 +5,7 @@ import { envSchema } from "@/types/env";
 import Link from "next/link";
 import Script from "next/script";
 
+
 export const metadata = {
   title: "Ivan Leo",
   description:

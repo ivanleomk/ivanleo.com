@@ -71,7 +71,7 @@ const useIntersectionObserver = (
 const TableOfContents = ({ source }: TOCProps) => {
   const headingLines = source
     .split("\n")
-    .filter((line) => line.match(/^#{1,5}\s/));
+    .filter((line) => line.match(/^#{2,5}\s/));
 
 
   const generateSpacing = (level: 1 | 2 | 3 | 4 | 5) => {
