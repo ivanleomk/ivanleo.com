@@ -13,6 +13,7 @@ import { getAllTweetData } from "@/app/utils/tweet";
 import TableOfContents from "@/app/components/TableOfContent";
 import { Tweet } from "react-tweet";
 import 'katex/dist/katex.min.css';
+//@ts-ignore
 import { InlineMath, BlockMath } from 'react-katex';
 
 
