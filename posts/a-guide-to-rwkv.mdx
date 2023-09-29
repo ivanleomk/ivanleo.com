@@ -28,13 +28,7 @@ For a better and more thorough explanation, do check out [GPT in 60 Lines of num
 
 What is a transformer? Normally today, when we talk about transformers, we're refering to GPTs - Generative Pre-Trained Transformers. These are huge models that have billions of parameters and are trained on lots of data. This enables them to be able to have an underlying understanding of language.
 
-How do they do this? Well, fundamentally, there are three things that determines the computational cost of a transformer
-
-1. The Context Length: This is the maximum number of tokens that it can fit inside it's limited memory - you can think of it like working memory 
-2. The Vocabulary size : Our transformer doesn't take in text, instead it takes in an array of integers, each corresponding to some character or substring
-3. The number of parameters : The larger the number of parameters, the more computational memory we need to fit everything inside.
-
-You can think of a transformer as having the following function signature where 
+How do they do this? You can think of a transformer as having the following function signature where 
 
 - `n_seq`: This is the size of the initial data passed in. It has to be less than or equal to the context length.
 - `n_vocab`: Our transformer outputs a prob distribution for each character in the input + the new predicted output.
@@ -328,6 +322,27 @@ def channel_mixing(x, last_x, mix_k, mix_r, Wk, Wr, Wv):
 	- <InlineMath math="w_v" /> has a dimensionality of <InlineMath math="[1024,4096]" />
 
 This means that we perform a scaling in the channel_mixing step from an initial dimensionality of 1024 to a dimensionality of 4096. This is very similar to the feed forward network that is used as a transformer. 
+
+
+## Bringing it together
+
+If we look at the code for RWKV in 100 lines, we notice that the RWKV architecture for the 400M model comprises 24 layers of the same block.
+
+Each block comprises
+- 1 initial layer norm ( Constant work since the size of the input is fixed as a (1024,) matrix )
+- 1 time_mixing step 
+- 1 layer norm ( Also fixed size input of (1024,) )
+- 1 channel mixing step 
+
+All of the operations that we perform in the time_mixing and channel_mixing step are all going to linearly scale with the size of our context. 
+
+The way I understand it is that since information on all previous token is compressed into a single token value
+
+- Time Mixing requires a constant number of operations per prediction step 
+- Channel Mixing also requires a constant number of operations per prediction step 
+
+Therefore, for every additional token we want to predict or want to add into our context, we have a constant amount of work to be done for each of these tokens. Therefore, this means that the amount of computational work we need to perform will scale roughly linearly with the amount of tokens we eventually need to predict/proccess.
+
 
 ## Interesting Tibdits 
 
