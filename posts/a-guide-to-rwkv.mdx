@@ -352,11 +352,3 @@ The way I understand it is that since information on all previous token is compr
 
 Therefore, for every additional token we want to predict or want to add into our context, we have a constant amount of work to be done for each of these tokens. Therefore, this means that the amount of computational work we need to perform will scale roughly linearly with the amount of tokens we eventually need to predict/proccess.
 
-
-## Interesting Tibdits 
-
-I found this particularly interesting.
-
-Models exhibit interesting behaviour whereby the first 200 dimensions seem to exhibit perfect recall where as the last remaining dimensions in this case seem to simply discard previous information.
-
-<KommyImage src = "/images/forget.png" />
