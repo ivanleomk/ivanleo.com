@@ -18,6 +18,10 @@ Here are some other resources which you might find useful about RWKVs
 
 With that being said, let's dive into RWKVs.
 
+<Callout>
+I'm using the 430M model here. Hence why my embedding space is 1024. Other models might differ so do take note if you are experimenting with the larger models
+</Callout>
+
 ## Background
 
 ### Transformers
@@ -78,6 +82,10 @@ because (2) is happening, then this means that the number of comparisons for a s
 <BlockMath math = "1 + 2 + \dots + n = \frac{n(n+1)}{2}" />
 
 which is quadratic in nature. This is an oversimplification of attention but you get the idea. That's why it gets more and more costly as we expand our models context sizes because there are simply more comparisons to be made.
+
+> We cannot cache these previous lookups in a transformer. This is one of the biggest problems with Transformers that **RWKV doesn't have** as you'll see down below.
+
+In transformers, the self-attention mechanism computes query, key, and value vectors for each word in the input sequence and uses the dot product of these vectors to determine the attention scores. This process is sensitive to the specific tokens in the input sequence, and as a result, caching the attention scores for one sequence may not be applicable to a subsequent sequence.
 
 ## RWKV
 
@@ -143,6 +151,7 @@ inside the state, we allocate space for each element as
 - 3 : prevChannelMixing result
 
 This helps our model to be able to get some concept of time. Note that (3) is mostly used to replace the short-term memory ( since it can only look back a single step )
+
 
 ### Time-Mixing
 
