@@ -3,7 +3,7 @@ title: A guide to RWKV
 date: 2023-09-28
 categories:
   - Machine Learning
-description: A quick guide to a competitior to the Transformer
+description: A guide to a strong open-source transformer alternative
 ---
 
 ## Introduction
@@ -19,7 +19,9 @@ Here are some other resources which you might find useful about RWKVs
 With that being said, let's dive into RWKVs.
 
 <Callout>
-I'm using the 430M model here. Hence why my embedding space is 1024. Other models might differ so do take note if you are experimenting with the larger models
+I'm using the 430M model here. Hence why my embedding space is 1024. Other models might differ so do take note if you are experimenting with the larger models.
+
+Do note that there are some issues with numerical instability in the simplified version provided by johanwind which have been fixed in the implementation in Blink's repo. **This is not production code**.
 </Callout>
 
 ## Background
