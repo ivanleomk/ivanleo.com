@@ -12,17 +12,15 @@ import Pre from "@/app/components/Pre";
 import { getAllTweetData } from "@/app/utils/tweet";
 import TableOfContents from "@/app/components/TableOfContent";
 import { Tweet } from "react-tweet";
-import 'katex/dist/katex.min.css';
+import "katex/dist/katex.min.css";
 //@ts-ignore
-import { InlineMath, BlockMath } from 'react-katex';
+import { InlineMath, BlockMath } from "react-katex";
 import { CodeBlocks } from "@/app/components/CodeBlocks";
-
+import PostTableOfContent from "@/app/components/PostTableOfContent";
 
 type Params = {
   name: string;
 };
-
-
 
 const getPost = (params: Params) => {
   return allPosts.filter((item) => {
@@ -40,22 +38,21 @@ export async function generateMetadata({ params }: { params: Params }) {
 
 const BlogPage = async ({ params }: { params: Params }) => {
   const post = getPost(params);
-  const tweetDataCache = await getAllTweetData();
-  const tweetData = tweetDataCache.data;
   const Content = getMDXComponent(post.body.code);
 
-  const StaticTweet = ({ id }: { id: keyof typeof tweetData }) => {
-    // Use the tweets map that is present in the outer scope to get the content associated with the id passed as prop
-    // return <Tweet data={tweetData[id]} />;
-    return <Tweet id={id} />
-  };
-
   return (
-    <div className="container relative py-6 lg:py-10">
-      <Link className="flex text-sm items-center space-x-2 mb-4" href="/">
-        <ArrowLeftIcon className="w-8 h-8" />
-        <p>back?</p>
-      </Link>
+    <div className="relative py-6 lg:gap-10 lg:py-8 xl:grid xl:grid-cols-[1fr_300px]">
+      <div className="mx-auto w-full min-w-0">
+        <article>
+          <Content components={{ ...CodeBlocks }} />
+        </article>
+      </div>
+      <div className="hidden text-sm xl:block">
+        <PostTableOfContent source={post.body.raw} />
+      </div>
+      {/* 
+
+
       <div className="grid gap-2 text-center">
         <h1 className="mt-2 inline-block text-md font-extrabold leading-tight text-slate-900 lg:text-2xl">
           {post.title}
@@ -69,9 +66,9 @@ const BlogPage = async ({ params }: { params: Params }) => {
           <TableOfContents source={post.body.raw} />
         </div>
         <article className="max-w-full px-4 pb-8 text-dark  order-2 lg:order-1 lg:max-w-3xl">
-          <Content components={{ ...CodeBlocks, StaticTweet }} />
+          >
         </article>
-      </div>
+      </div> */}
     </div>
   );
 };

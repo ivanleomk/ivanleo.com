@@ -1,7 +1,7 @@
 "use client"
 import { Input } from '@/components/ui/input';
 import { useRouter, useSearchParams } from 'next/navigation'
-import React, { useState, useTransition } from 'react'
+import React, { useEffect, useRef, useState, useTransition } from 'react'
 import { Button } from './ui/button';
 import { ClipLoader } from 'react-spinners'
 
@@ -13,7 +13,6 @@ const UserPostSearch = () => {
     const [timeoutId, setTimeoutId] = useState<NodeJS.Timeout>();
     const [userQuery, setUserQuery] = useState(query)
 
-    const isSearching = timeoutId || isPending;
 
     const handleUserSubmit = (e: React.ChangeEvent<HTMLInputElement>) => {
         clearTimeout(timeoutId)
