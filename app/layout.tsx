@@ -4,6 +4,13 @@ import "./mdx.css";
 import { envSchema } from "@/types/env";
 import Link from "next/link";
 import Script from "next/script";
+import { navConfig } from "./config/navConfig";
+import CommandMenu from "./components/CommandMenu";
+import { siteConfig } from "./config/site";
+import { cn } from "./lib/utils";
+import { buttonVariants } from "./components/ui/button";
+import { Github, Twitter } from "lucide-react";
+import SiteHeader from "./components/SiteHeader";
 
 
 export const metadata = {
@@ -43,47 +50,7 @@ export default function RootLayout({
         }}
       />
       <body className="">
-        <header className="container mx-auto max-w-4xl">
-          <div className="w-full flex flex-col items-start sm:flex-row sm:items-center sm:justify-between border-b py-4 mx-4">
-            <div className="flex items-center space-x-2">
-              <div className="block h-10 w-10 overflow-hidden rounded-full">
-                <Image
-                  src="/ProfilePic.jpeg"
-                  alt="Logo"
-                  width={48}
-                  height={48}
-                />
-              </div>
-
-              <div className="flex flex-col space-y-1 text-sm leading-none">
-                <a
-                  href="https://twitter.com/ivanleomk"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="flex items-center space-x-2"
-                >
-                  <p className="font-bold">@ivanleomk</p>
-                </a>
-                <span>I write code sometimes</span>
-              </div>
-            </div>
-
-            <div className="flex items-center space-x-4 cursor-pointer my-2 sm:my-0">
-              <Link href="/" className="text-sm hover:font-semibold">
-                Home
-              </Link>
-              <Link href="/posts" className="text-sm hover:font-semibold">
-                Posts
-              </Link>
-              <a href="https://dump.ivanleo.com/" target="_blank" rel="noopener" className="text-sm hover:font-semibold">
-                Notes
-              </a>
-              <Link href="/work-log" className="text-sm hover:font-semibold">
-                Work Log
-              </Link>
-            </div>
-          </div>
-        </header>
+        <SiteHeader />
         <div className="container mx-auto pt-2 max-w-4xl">
           <div className="mx-4 w-full">{children}</div>
         </div>
