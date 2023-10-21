@@ -6,25 +6,21 @@ import { compareDesc, format } from "date-fns";
 import PostCard from "./components/PostCard";
 import SectionHeader from "./components/SectionHeader";
 import { siteConfig } from "./config/site";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
 
-const posts = allPosts.filter(item => !item.draft).sort((a, b) => {
-  return compareDesc(new Date(a.date), new Date(b.date));
-});
+const posts = allPosts
+  .filter((item) => !item.draft)
+  .sort((a, b) => {
+    return compareDesc(new Date(a.date), new Date(b.date));
+  });
 
 export default function Home() {
   return (
     <div className="flex-1 mb-6">
       <div className="container relative">
         <section className="flex max-w-[1100px] flex-col items-start gap-2 px-4 pt-8 md:pt-12 pb-8">
-          <h1 className="text-3xl font-bold leading-tight tracking-tighter md:text-5xl lg:leading-[1.1]">Welcome</h1>
+          <h1 className="text-3xl font-bold leading-tight tracking-tighter md:text-5xl lg:leading-[1.1]">
+            Welcome
+          </h1>
           <span className="max-w-[750px] text-lg text-muted-foreground sm:text-xl">
             to my little corner of the internet
           </span>
@@ -38,33 +34,57 @@ export default function Home() {
             A Quick Guide
           </h3>
           <p className="leading-7">
-            You can check out everything that I&apos;ve worked on to understand the AI Space on my <Link className="font-medium text-primary underline underline-offset-4"
-              href="/work-log">Work Log</Link>. I&apos;ve also listed some existing projects <Link className="font-medium text-primary underline underline-offset-4"
-                href="/projects">here</Link>. Lastly, to read some of my posts, I recommend heading over to the <Link className="font-medium text-primary underline underline-offset-4"
-                  href="/posts">Posts</Link> section.
+            You can check out everything that I&apos;ve worked on to understand
+            the AI Space on my{" "}
+            <Link
+              className="font-medium text-primary underline underline-offset-4"
+              href="/work-log"
+            >
+              Work Log
+            </Link>
+            . I&apos;ve also listed some existing projects{" "}
+            <Link
+              className="font-medium text-primary underline underline-offset-4"
+              href="/projects"
+            >
+              here
+            </Link>
+            . Lastly, to read some of my posts, I recommend heading over to the{" "}
+            <Link
+              className="font-medium text-primary underline underline-offset-4"
+              href="/posts"
+            >
+              Posts
+            </Link>{" "}
+            section.
           </p>
           <h3 className="mt-8 scroll-m-20 text-2xl font-semibold tracking-tight">
             Recent Posts
           </h3>
           <p className="leading-7">
-            Here are some posts which I&apos;ve recently published which you might be interested in.
+            Here are some posts which I&apos;ve recently published which you
+            might be interested in.
           </p>
           <ul className="ml-2 [&>li]:mt-2 space-y-4 leading-7">
-            {
-              posts.slice(0, 5).map(item => {
-                return (<li
-                  key={item.slug}>
-                  <Link href={`/blog/${item.slug}`} className=" hover:underline">
+            {posts.slice(0, 5).map((item) => {
+              return (
+                <li key={item.slug}>
+                  <Link
+                    href={`/blog/${item.slug}`}
+                    className=" hover:underline"
+                  >
                     <h3>{item.title}</h3>
-                    <p className="text-sm text-muted-foreground">{`${item.description.slice(0, 100)}${item.description.length > 100 ? "..." : ""}`}</p>
+                    <p className="text-sm text-muted-foreground">{`${item.description.slice(
+                      0,
+                      100
+                    )}${item.description.length > 100 ? "..." : ""}`}</p>
                   </Link>
-                </li>)
-              })
-            }
+                </li>
+              );
+            })}
           </ul>
         </section>
       </div>
-
     </div>
     // <div>
     //   <div className="my-10 ">
