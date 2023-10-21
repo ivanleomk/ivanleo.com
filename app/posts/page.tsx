@@ -6,8 +6,8 @@ import { ArrowLeftIcon } from "@heroicons/react/24/outline";
 import Link from "next/link";
 import PostCard from "../components/PostCard";
 import UserPostSearch from "../components/UserPostSearch";
-
-const posts = allPosts.filter(item => !item.draft)
+import { GridLoader } from "react-spinners";
+import PostSpinner from "../components/PostSpinner";
 
 const getValidPosts = async (query: string | null) => {
   return allPosts.filter(item => !item.draft).sort((a, b) => {
@@ -38,7 +38,7 @@ const PostPage = async ({ searchParams }: {
         arranged by date published
       </span>
       <UserPostSearch />
-      <Suspense fallback={<>Loading...</>}>
+      <Suspense fallback={<PostSpinner />}>
         <span className="max-w-[750px] text-sm text-muted-foreground">
           Loaded a total of {posts.length} posts
         </span>
