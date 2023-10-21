@@ -5,31 +5,31 @@ categories:
   - Machine Learning
   - Deep Learning
   - Natural Language Processing
-description:
-  I recently took some time building out some simple models to classify tweets on kaggle - let's walk through and see what I managed to build
+description: I recently took some time building out some simple models to classify tweets on kaggle - let's walk through and see what I managed to build
 ---
 
 ## Premise
 
 <Callout>
-    [Here](https://www.kaggle.com/code/ivanleomk/kaggle-nlp-approach-to-disaster-tweets) is the notebook with the code mentioned in this repository
+  [Here](https://www.kaggle.com/code/ivanleomk/kaggle-nlp-approach-to-disaster-tweets)
+  is the notebook with the code mentioned in this repository
 </Callout>
 
-The permise of the problem is quite simple. 
+The permise of the problem is quite simple.
 
-> Given a tweet, can we identify if the twet is announcing a disaster? 
+> Given a tweet, can we identify if the twet is announcing a disaster?
 
-Here are some examples of disaster tweets 
+Here are some examples of disaster tweets
 
-1. All residents asked to 'shelter in place' are being notified by officers. No other evacuation or shelter in place orders are expected	
-2. Our Deeds are the Reason of this #earthquake May ALLAH Forgive us all	
+1. All residents asked to 'shelter in place' are being notified by officers. No other evacuation or shelter in place orders are expected
+2. Our Deeds are the Reason of this #earthquake May ALLAH Forgive us all
 
 Here are some examples of non-disaster tweets
 
-1. `@b24fowler` I see that! Crazy how this line blew up.	
-2. I blew up #oomf instagrams cause she's cute and she's an active follower	
+1. `@b24fowler` I see that! Crazy how this line blew up.
+2. I blew up #oomf instagrams cause she's cute and she's an active follower
 
-We can see that there are a few characteristics of these disaster tweets 
+We can see that there are a few characteristics of these disaster tweets
 
 - They tend to be more formal than those of the non-disaster tweets
 - They tend to be more informative than those of the non-disaster tweets
@@ -37,63 +37,61 @@ We can see that there are a few characteristics of these disaster tweets
 
 ### Cleaning Our Data
 
-We can verify this by running some simple data exploration 
+We can verify this by running some simple data exploration
 
 ```python
 df.describe(include = "all")
 ```
 
-which gives us a quick walkthrough of the distributions of the data itself. 
+which gives us a quick walkthrough of the distributions of the data itself.
 
-| id|keyword|location|text|target |
-|--|--|--|--|--|
-count|7613.000000|7552|5080|7613|7613.00000
-unique|NaN|221|3341|7503|NaN
-top|NaN|fatalities|USA|11-Year-Old Boy Charged With Manslaughter of T...|NaN
-freq|NaN|45|104|10|NaN
-mean|5441.934848|NaN|NaN|NaN|0.42966
-std|3137.116090|NaN|NaN|NaN|0.49506
-min|1.000000|NaN|NaN|NaN|0.00000
-25%|2734.000000|NaN|NaN|NaN|0.00000
-50%|5408.000000|NaN|NaN|NaN|0.00000
-75%|8146.000000|NaN|NaN|NaN|1.00000
-max|10873.000000|NaN|NaN|NaN|1.00000
+| id     | keyword      | location   | text | target                                            |
+| ------ | ------------ | ---------- | ---- | ------------------------------------------------- | ---------- |
+| count  | 7613.000000  | 7552       | 5080 | 7613                                              | 7613.00000 |
+| unique | NaN          | 221        | 3341 | 7503                                              | NaN        |
+| top    | NaN          | fatalities | USA  | 11-Year-Old Boy Charged With Manslaughter of T... | NaN        |
+| freq   | NaN          | 45         | 104  | 10                                                | NaN        |
+| mean   | 5441.934848  | NaN        | NaN  | NaN                                               | 0.42966    |
+| std    | 3137.116090  | NaN        | NaN  | NaN                                               | 0.49506    |
+| min    | 1.000000     | NaN        | NaN  | NaN                                               | 0.00000    |
+| 25%    | 2734.000000  | NaN        | NaN  | NaN                                               | 0.00000    |
+| 50%    | 5408.000000  | NaN        | NaN  | NaN                                               | 0.00000    |
+| 75%    | 8146.000000  | NaN        | NaN  | NaN                                               | 1.00000    |
+| max    | 10873.000000 | NaN        | NaN  | NaN                                               | 1.00000    |
 
-We can also see that if we were to compare the raw text itself, we can see that the disaster tweets tend to be longer than the non-disaster tweets. 
+We can also see that if we were to compare the raw text itself, we can see that the disaster tweets tend to be longer than the non-disaster tweets.
 
-<KommyImage src = "/images/length_distribution.png" height = {200} width = {200} blogImage={true} />
+<img src="/images/length_distribution.png" />
 
 However, there's a lot of noise in the text itself - with misspellings, punctuations, and other things that we need to clean up. So, let's get started on that.
 
-<CodeTitle lang = "py" title = "Clean Text Function" />
-```python
-sw = stopwords.words('english')
-lemmatizer = WordNetLemmatizer() 
+<CodeTitle lang="py" title="Clean Text Function" />
+```python sw = stopwords.words('english') lemmatizer = WordNetLemmatizer(){" "}
 
 def clean_text(text):
-    text = text.lower()
-    
+text = text.lower()
+
     text = re.sub(r"[^a-zA-Z?.!,¿]+", " ", text) # replacing everything with space except (a-z, A-Z, ".", "?", "!", ",")
 
-    text = re.sub(r"http\S+", "",text) #Removing URLs 
+    text = re.sub(r"http\S+", "",text) #Removing URLs
     #text = re.sub(r"http", "",text)
-    
-    html=re.compile(r'<.*?>') 
-    
+
+    html=re.compile(r'<.*?>')
+
     text = html.sub(r'',text) #Removing html tags
-    
+
     punctuations = '@#!?+&*[]-%.:/();$=><|{}^' + "'`" + '_'
     for p in punctuations:
         text = text.replace(p,'') #Removing punctuations
-        
+
     text = [word.lower() for word in text.split() if word.lower() not in sw]
-    
+
     text = [lemmatizer.lemmatize(word) for word in text]
-    
+
     text = " ".join(text) #removing stopwords
-    
-    
-    
+
+
+
     emoji_pattern = re.compile("["
                            u"\U0001F600-\U0001F64F"  # emoticons
                            u"\U0001F300-\U0001F5FF"  # symbols & pictographs
@@ -104,11 +102,12 @@ def clean_text(text):
                            "]+", flags=re.UNICODE)
     text = emoji_pattern.sub(r'', text) #Removing emojis
 
-    
-    return text
-```
 
-However, if we plot the wordplot of the text produced by this function, we'll find that this function doesn't quite remove three things - twitter links ( these start with t.co/(link) ) , hashtags and mentions. So, we can do so by writing an additional function which does this 
+    return text
+
+````
+
+However, if we plot the wordplot of the text produced by this function, we'll find that this function doesn't quite remove three things - twitter links ( these start with t.co/(link) ) , hashtags and mentions. So, we can do so by writing an additional function which does this
 
 ```python
 pattern = r"http://t\.co/\w+|@\w+|#\w+"
@@ -120,11 +119,11 @@ def remove_links(text):
 # Apply the function to the 'text' column of the DataFrame
 df["cleaned_text_without_links_and_mentions"] = df["text"].apply(lambda x: clean_text(remove_links(x)))
 df["cleaned_text_without_links_and_mentions_length"] = df["cleaned_text_without_links_and_mentions"].apply(lambda x: len(x))
-```
+````
 
 We can see that the length of the text has reduced significantly.
 
-### Examining Keywords 
+### Examining Keywords
 
 Our dataset comes with a column for unique keywords - each tweet can optionally be tagged to a single keyword.
 
@@ -149,25 +148,25 @@ count_df["keyword"] = count_df["keyword"].apply(lambda x: unquote(x))
 count_df
 ```
 
-This in turn gives the following output 
+This in turn gives the following output
 
-keyword|count|proportion
-| -- | --| -- |
-0|ablaze|13|0.001708
-1|accident|24|0.003153
-2|airplane accident|30|0.003941
-3|ambulance|20|0.002627
-4|annihilated|11|0.001445
-...|...|...|...
-215|wounded|26|0.003415
-216|wounds|10|0.001314
-217|wreck|7|0.000919
-218|wreckage|39|0.005123
-219|wrecked|3|0.000394
+| keyword | count             | proportion |
+| ------- | ----------------- | ---------- | -------- |
+| 0       | ablaze            | 13         | 0.001708 |
+| 1       | accident          | 24         | 0.003153 |
+| 2       | airplane accident | 30         | 0.003941 |
+| 3       | ambulance         | 20         | 0.002627 |
+| 4       | annihilated       | 11         | 0.001445 |
+| ...     | ...               | ...        | ...      |
+| 215     | wounded           | 26         | 0.003415 |
+| 216     | wounds            | 10         | 0.001314 |
+| 217     | wreck             | 7          | 0.000919 |
+| 218     | wreckage          | 39         | 0.005123 |
+| 219     | wrecked           | 3          | 0.000394 |
 
-We can see that there are certain keywords which are more likely to be associated with a disaster tweet than others. 
+We can see that there are certain keywords which are more likely to be associated with a disaster tweet than others.
 
-At the same time, if you look at the individual words (Eg. Blew Up), you'll notice that the keyword is encoded differently as compared to the text. 
+At the same time, if you look at the individual words (Eg. Blew Up), you'll notice that the keyword is encoded differently as compared to the text.
 
 For instance, looking for the word `blew%20up` in the keyword column gives us the following output.
 
@@ -175,54 +174,56 @@ For instance, looking for the word `blew%20up` in the keyword column gives us th
 df[df['keyword']=="blew%20up"].head()
 ```
 
-	id| keyword| location| text| target| length| cleaned_text| cleaned_text_length| cleaned_text_without_links_and_mentions| cleaned_text_without_links_and_mentions_length
+    id| keyword| location| text| target| length| cleaned_text| cleaned_text_length| cleaned_text_without_links_and_mentions| cleaned_text_without_links_and_mentions_length
     | -- | -- |-- | -- | -- | -- | -- | -- | -- | -- |
+
 747| 1079| blew%20up| NaN| @DamnAarielle yo timeline blew up so damn fast| 0| 46| damnaarielle yo timeline blew damn fast| 39| yo timeline blew damn fast| 26
 748| 1080| blew%20up| Atlanta| @mfalcon21 go look. Just blew it up w atomic bomb.| 0| 50| mfalcon go look blew w atomic bomb| 34| go look blew w atomic bomb| 26
 749| 1081| blew%20up| NaN| I blew up #oomf instagrams cause she's cute and she's an active follower| 0| 72| blew oomf instagrams cause cute active follower| 47| blew instagrams cause cute active follower
 
-This means that when we perform our feature engineering, we'll need to unescape the keywords. 
-
-
+This means that when we perform our feature engineering, we'll need to unescape the keywords.
 
 I decided to therefore engineer two features using these keywords.
 
 1. A binary feature of 1 and 0 to determine if a given keyword exists in the tweet
 2. A binary feature of 0 or the proportion of tweets containing this keywords which had a disaster tweet.
 
-We can do so with the following code 
+We can do so with the following code
 
-
-<CodeTitle lang = "py" title = "Create Keyword Features" />
-```python
-data = df.copy()
+<CodeTitle lang="py" title="Create Keyword Features" />
+```python data = df.copy()
 
 #Load the DataFrame containing the proportion values for each keyword
 proportions_df = count_df.copy()
 keywords = list(count_df["keyword"])
 
 # Create a dictionary to store the proportion values for each keyword
+
 proportions_dict = proportions_df.set_index("keyword")["proportion"].to_dict()
 
 # Create a list to store DataFrames for each keyword
+
 keyword_dfs = []
 
 # Create binary features for each keyword and store them in separate DataFrames
+
 for keyword in keywords:
-    temp_df = data[["cleaned_text"]].copy()
-    temp_df[f"has_{keyword}"] = temp_df["cleaned_text"].apply(lambda x: 1 if keyword.lower() in x.lower() else 0)
-    temp_df[f"proportion_{keyword}"] = temp_df[f"has_{keyword}"] * proportions_dict[keyword]
-    keyword_dfs.append(temp_df[[f"has_{keyword}", f"proportion_{keyword}"]])
+temp*df = data[["cleaned_text"]].copy()
+temp_df[f"has*{keyword}"] = temp*df["cleaned_text"].apply(lambda x: 1 if keyword.lower() in x.lower() else 0)
+temp_df[f"proportion*{keyword}"] = temp*df[f"has*{keyword}"] \* proportions*dict[keyword]
+keyword_dfs.append(temp_df[[f"has*{keyword}", f"proportion\_{keyword}"]])
 
 # Concatenate all keyword DataFrames along the columns axis
+
 df = pd.concat([data] + keyword_dfs, axis=1)
-```
+
+````
 
 
 
 ### Location
 
-When it comes to location, we have a different problem - most of the data seems to be user input and lacks robust validation. 
+When it comes to location, we have a different problem - most of the data seems to be user input and lacks robust validation.
 
 ```python
 > df['location'].unique().tolist()[:10]
@@ -236,35 +237,34 @@ When it comes to location, we have a different problem - most of the data seems 
  'World Wide!!',
  'Paranaque City',
  'Live On Webcam']
-```
+````
 
 Hence it's not fit for use when dealing with the classification task
-
 
 ## NLP
 
 ### Baseline Model
 
-I first started by working a some simple model which took in a single feature - which is complex data scientist speak for a single column of data from the dataset. 
+I first started by working a some simple model which took in a single feature - which is complex data scientist speak for a single column of data from the dataset.
 
 We had a few different options to choose from - the original tweet, the cleaned tweet, and the cleaned tweet without links and mentions. So, why not try all of them?
 
-We first start by splitting the data into a training and validation set. 
+We first start by splitting the data into a training and validation set.
 
 ```python
 X_train, X_test , y_train, y_test = train_test_split(df,df['target'].values,test_size=0.2,random_state=123,stratify=df['target'].values)
 ```
 
-We then create a pipeline which takes in the text column and then vectorizes it using TF-IDF. 
+We then create a pipeline which takes in the text column and then vectorizes it using TF-IDF.
 
 Here's a simple helper function which will handle the training of the vectorizer and the classifier along with the output of the F1 Score and accuracy of the model.
 
 ```python
 def train_on_single_col(col_name):
-    tfidf_vectorizer = TfidfVectorizer() 
+    tfidf_vectorizer = TfidfVectorizer()
     tfidf_train_vectors = tfidf_vectorizer.fit_transform(X_train[col_name].values)
     tfidf_test_vectors = tfidf_vectorizer.transform(X_test[col_name].values)
-    
+
     classifier = RandomForestClassifier()
     classifier.fit(tfidf_train_vectors,y_train)
     y_pred = classifier.predict(tfidf_test_vectors)
@@ -274,7 +274,7 @@ def train_on_single_col(col_name):
     print(f"F1 Score: {f1:.4f}")
     print(f"Total accuracy: {accuracy:.4f}")
     return y_pred
-    
+
 def generate_prediction_ranking(values,predictions):
     cnf_matrix = confusion_matrix(values,predictions)
     group_names = ['TN','FP','FN','TP']
@@ -368,7 +368,7 @@ length_and_cleaned_text = Pipeline([
 generate_predictions_and_visualisations(length_and_cleaned_text)
 ```
 
-This in turn gave the output of 
+This in turn gave the output of
 
 ```bash
 Pipeline(steps=[('preprocessor',
@@ -385,11 +385,10 @@ F1 Score: 0.7223
 
 In total, I tried using a combination of the different types of tweets that we had - the raw tweet, the cleaned tweet and the cleaned tweet without links and mentions. I also tried using the length of the tweet as a feature.
 
-Some other things that I experimented with were 
+Some other things that I experimented with were
 
--  NGrams - using keywords that are 1-3 words long instead of 1 word long by default in our `TF-IDF vectorizor`
+- NGrams - using keywords that are 1-3 words long instead of 1 word long by default in our `TF-IDF vectorizor`
 - Using the keywords that were extracted from the tweets as features, both the binary version and the proportion weighted weight
-
 
 In the end, I found that using this specific pipeline was able to yield the highest results on average - with a F1 Score that was aboiut 74-75% on average for each time that we trained it for.
 
@@ -412,17 +411,16 @@ generate_predictions_and_visualisations(pipeline)
 
 ### Experimenting with Meta Features
 
-Some examples of meta features are 
+Some examples of meta features are
 
 - Number of words in the text
-- Number of unique words in the text 
-- Number of stopwords in the text 
-- the number of links or mentions in the tweet 
+- Number of unique words in the text
+- Number of stopwords in the text
+- the number of links or mentions in the tweet
 
 I decided to try and use these meta features as features in my model to see if it would improve the performance of my model.
 
 We can extract them from the original raw tweet by using the following code
-
 
 ```python
 X_train["unique_word_count"] = X_train["text"].apply(lambda x: len(set(x.split())))
@@ -462,30 +460,28 @@ pipeline = Pipeline([
 generate_predictions_and_visualisations(pipeline)
 ```
 
-which yielded the following results 
+which yielded the following results
 
 ```bash
 Total accuracy: 0.8004
 F1 Score: 0.7496
 ```
 
-### Experimenting with Different Classifiers and Vectorizers 
+### Experimenting with Different Classifiers and Vectorizers
 
 I also tried experimenting with different classifiers and vectorizers to see if I could get a better result.
 
 I first started with using `Word2Vec`
 
-<CodeTitle lang = "py" title = "Word 2 Vec Implementation" />
-```python
-import numpy as np
-from sklearn.base import BaseEstimator, TransformerMixin
+<CodeTitle lang="py" title="Word 2 Vec Implementation" />
+```python import numpy as np from sklearn.base import BaseEstimator, TransformerMixin
 import gensim
 
 class Word2VecVectorizer(BaseEstimator, TransformerMixin):
-    def __init__(self, size=100, min_count=1, seed=42):
-        self.size = size
-        self.min_count = min_count
-        self.seed = seed
+def **init**(self, size=100, min_count=1, seed=42):
+self.size = size
+self.min_count = min_count
+self.seed = seed
 
     def fit(self, X, y=None):
         self.word2vec_model = gensim.models.Word2Vec(X, vector_size=self.size, min_count=self.min_count, seed=self.seed)
@@ -504,7 +500,8 @@ class Word2VecVectorizer(BaseEstimator, TransformerMixin):
         if num_words > 0:
             doc_vector /= num_words
         return doc_vector
-```
+
+````
 
 Which I then imported into my pipeline as seen below. I experimented with a dimensionality of 100 and 300 respectively.
 
@@ -526,12 +523,12 @@ pipeline = Pipeline([
 ])
 
 generate_predictions_and_visualisations(pipeline)
-```
+````
 
-This yielded the following results 
+This yielded the following results
 
 ```bash
-Size - 100 
+Size - 100
 Total accuracy: 0.6842
 F1 Score: 0.5732
 
@@ -542,7 +539,7 @@ F1 Score: 0.5757
 
 In short, Word2Vec was not a great fit for this.
 
-I then went on to try using some other models such as NaiveBayesian model and a XGBoost tree but found that they were not able to perform as well as the random forest. 
+I then went on to try using some other models such as NaiveBayesian model and a XGBoost tree but found that they were not able to perform as well as the random forest.
 
 This was even after applying other optimizations such as `RFE` to optimize the number of features used in the model and some cross-fold validation.
 
@@ -567,7 +564,7 @@ pipeline = Pipeline([
 generate_predictions_and_visualisations(pipeline)
 ```
 
-which yielded the result of 
+which yielded the result of
 
 ```bash
 Total accuracy: 0.7761
@@ -576,44 +573,43 @@ F1 Score: 0.7146
 
 ## Deep Learning
 
-I now moved on try some deep learning approaches. In particular I wanted to experiment with 
+I now moved on try some deep learning approaches. In particular I wanted to experiment with
 
 1. Set Fit
 2. Chain Of Thought reasoning with GPT
 
-
 ### Set Fit
 
-Set Fit can be explained as follows 
+Set Fit can be explained as follows
 
-1. We first generate embeddings using an untrained transformer 
+1. We first generate embeddings using an untrained transformer
 2. We then use these embeddings to train a classifier
-3. We then generate similar pairs - which are two randomly chosen tweets that have the same label to train a second transformer to produce more fine-tuned embeddings. 
+3. We then generate similar pairs - which are two randomly chosen tweets that have the same label to train a second transformer to produce more fine-tuned embeddings.
 4. We then generate a second round of embeddings with our fine-tuned model
-4. We continue training our classifier with these new fine-tuned embeddings 
-5. Profit
+5. We continue training our classifier with these new fine-tuned embeddings
+6. Profit
 
-We can generate the pairs using the function seen below. In my case, I chose to augment do 5 rounds of pair generation - augmenting an initial data set of 7500 tweets to around 35,000 pairs to train our embeddings on 
+We can generate the pairs using the function seen below. In my case, I chose to augment do 5 rounds of pair generation - augmenting an initial data set of 7500 tweets to around 35,000 pairs to train our embeddings on
 
 ```python
 def generate_similar_pairs(sentences,sentence_column,labels):
     num_classes = np.unique(labels)
     sentences_by_label = [np.where(labels == i)[0] for i in num_classes]
     target_to_ids = {i: item for i, item in enumerate(sentences_by_label)}
-    
+
     res = []
 
     for idx,sentence in sentences.iterrows():
         # We choose another random one from the same label
         possible_ids = target_to_ids[sentence.target]
         possible_ids = [i for i in possible_ids if i != idx]
-        
+
         chosen_id = random.choice(possible_ids)
         res.append(
             InputExample(texts = [sentence[sentence_column],sentences.iloc[chosen_id][sentence_column]],label=float(sentence.target) )
         )
     return res
-        
+
 
 pairs = []
 for i in range(5):
@@ -621,7 +617,7 @@ for i in range(5):
     pairs = pairs + new_pairs
 ```
 
-We then trained an initial classifier on embeddings generated by an untrained model 
+We then trained an initial classifier on embeddings generated by an untrained model
 
 ```python
 from sklearn.linear_model import LogisticRegression,SGDClassifier
@@ -638,7 +634,7 @@ X_test_no_fit = base_model.encode(X_test["cleaned_text"].to_list())
 sgd.partial_fit(X_train_no_fit,y_train,classes=np.unique(y_train))
 ```
 
-We then fine-tuned our embeddings using the pairs we generated earlier 
+We then fine-tuned our embeddings using the pairs we generated earlier
 
 ```python
 train_dataloader = DataLoader(pairs, shuffle=True, batch_size=32)
@@ -646,7 +642,7 @@ train_loss = losses.CosineSimilarityLoss(model)
 model.fit(train_objectives=[(train_dataloader, train_loss)], epochs=3, warmup_steps=10, show_progress_bar=True)
 ```
 
-We then generated our final embeddings and trained our classifier on them 
+We then generated our final embeddings and trained our classifier on them
 
 ```python
 
@@ -656,27 +652,26 @@ X_test_w_fit = model.encode(X_test["cleaned_text"].to_list())
 sgd.partial_fit(X_train_w_fit,y_train,classes=np.unique(y_train))
 ```
 
-We can see that this method was able to beat our original NLP approaches 
+We can see that this method was able to beat our original NLP approaches
 
-Initial Scores here are from the classifier trained on the embeddings generated by the untrained model while Final Scores are from the classifier further trained on the embeddings generated by the fine-tuned model 
+Initial Scores here are from the classifier trained on the embeddings generated by the untrained model while Final Scores are from the classifier further trained on the embeddings generated by the fine-tuned model
 
 ```bash
 Initial Scores ( Batch size 32 ) - Accuracy: 0.7550886408404465,F1: 0.7382456140350877
 Final Scores ( Batch size 32 ) - Accuracy: 0.8135259356533159,F1: 0.7841945288753798
 ```
 
-
 ### GPT Chain Of Thought
 
 I then went on to try a different approach - Chain Of Thought reasoning with GPT.
 
-Using GPT, we try to elucidate some hidden context from the text itself by asking GPT to elaborate on why certain tweets might or not be a tweet referencing a disaster. 
+Using GPT, we try to elucidate some hidden context from the text itself by asking GPT to elaborate on why certain tweets might or not be a tweet referencing a disaster.
 
 We then utilise this generated reasoning as an embedding for classification using our trained SGDClassifier.
 
 > Note that I added a `currIdx` parameter so that we can perform logging when we generate the GPT responses while iterating through our rows.
 
-We can first generate a quick response from GPT using the following code 
+We can first generate a quick response from GPT using the following code
 
 ```python
 def generate_response(prompt,currIdx):
@@ -699,17 +694,17 @@ def generate_response(prompt,currIdx):
             time.sleep(2*i)
 ```
 
-I eventually settled on using the following prompt 
+I eventually settled on using the following prompt
 
 ```python
 prompt = """
-You are now an expert on social media trends. You are about to be given a short twitter thread. 
+You are now an expert on social media trends. You are about to be given a short twitter thread.
 
 Sample Disaster Tweets:
 '#RockyFire Update => California Hwy. 20 closed in both directions due to Lake County fire - #CAfire #wildfires',
 'Haha South Tampa is getting flooded hah- WAIT A SECOND I LIVE IN SOUTH TAMPA WHAT AM I GONNA DO WHAT AM I GONNA DO FVCK #flooding',
 'How the West was burned: Thousands of #wildfires ablaze in California alone http://t.co/vl5TBR3wbr'
- 
+
 Sample Tweets that are not about disasters
 'What a goooooooaaaaaal!!!!!!',
 'We always try to bring the heavy. #metal #RT http://t.co/YAo1e0xngw',
@@ -734,8 +729,7 @@ I tested it on a sample tweet and got the following response
 'Yes, this is about a disaster. This tweet is making reference to an earthquake, which is a natural disaster. Additionally, the tweet is asking for forgiveness, which implies that the user is referring to a negative event.'
 ```
 
-
-I then tried it on the first 5 disaster tweets and the first 5 non-disaster tweets and got the following results 
+I then tried it on the first 5 disaster tweets and the first 5 non-disaster tweets and got the following results
 
 ```python
 disaster_tweets = []
@@ -743,7 +737,7 @@ tweets = df[df["target"]==1].head(5)["text"].to_list()
 for tweet in tweets:
     response = generate_response(prompt.format(tweet=tweet),2)
     disaster_tweets.append(response)
-    
+
 non_disaster_tweets = []
 tweets = df[df["target"]==0].head(5)["text"].to_list()
 for tweet in tweets:
@@ -767,7 +761,7 @@ print(f"Accuracy : {count / len(predictions)}")
 
 Interestingly, this yielded an accuracy of around 70% when applied to this small dataset of 10 items.
 
-We then applied this towards another subset of our dataset (~ 300 items) with the following code snippet 
+We then applied this towards another subset of our dataset (~ 300 items) with the following code snippet
 
 ```python
 gpt_reasoning = pd.read_csv('/kaggle/input/gpt-reasoning-disaster-tweets/gpt_reasoning.csv')
@@ -792,7 +786,7 @@ print("Logistic Regression Recall:",metrics.recall_score(y_test_gpt, predicted))
 print("F1-Score:",metrics.f1_score(y_test_gpt, predicted))
 ```
 
-Which in turn yielded the following results 
+Which in turn yielded the following results
 
 ```bash
 Logistic Regression Accuracy: 0.8166666666666667

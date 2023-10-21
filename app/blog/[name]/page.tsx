@@ -12,86 +12,14 @@ import Pre from "@/app/components/Pre";
 import { getAllTweetData } from "@/app/utils/tweet";
 import TableOfContents from "@/app/components/TableOfContent";
 import { Tweet } from "react-tweet";
-import 'katex/dist/katex.min.css';
+import "katex/dist/katex.min.css";
 //@ts-ignore
-import { InlineMath, BlockMath } from 'react-katex';
-
+import { InlineMath, BlockMath } from "react-katex";
+import { CodeBlocks } from "@/app/components/CodeBlocks";
+import PostTableOfContent from "@/app/components/PostTableOfContent";
 
 type Params = {
   name: string;
-};
-
-export const CodeBlocks = {
-  Callout,
-  CodeTitle,
-  KommyImage,
-  KommyLink,
-  InlineMath,
-  BlockMath,
-  a: ({ ...props }: React.HTMLAttributes<HTMLAnchorElement>) => (
-    <a
-      className="animated-underline border-b border-dotted border-dark hover:border-dark/0"
-      {...props}
-    />
-  ),
-  p: ({ className, ...props }: React.HTMLAttributes<HTMLParagraphElement>) => (
-    <p
-      className={clsxm(
-        "text-md leading-7 [&:not(:first-child)]:mt-6 break-words",
-        className
-      )}
-      {...props}
-    />
-  ),
-  ul: ({ ...props }) => (
-    <ul className="my-6 ml-6 list-outside list-disc text-md" {...props} />
-  ),
-  ol: ({ ...props }) => (
-    <ol className="my-6 ml-6 list-outside list-decimal text-md" {...props} />
-  ),
-  li: ({ ...props }) => <li className="mt-2 text-md leading-7" {...props} />,
-  blockquote: ({
-    className,
-    ...props
-  }: React.BlockquoteHTMLAttributes<HTMLQuoteElement>) => (
-    <blockquote
-      className="mt-6 border-l-4 border-dark pl-6 italic text-dark [&>*]:text-zinc-600"
-      {...props}
-    />
-  ),
-  b: ({ ...props }: React.HTMLAttributes<HTMLTableElement>) => (
-    <b {...props} className="text-md leading-6" />
-  ),
-  table: ({ ...props }: React.HTMLAttributes<HTMLTableElement>) => (
-    <div className="my-6 min-w-full overflow-y-auto rounded-md">
-      <table className="min-w-full divide-y divide-gray-400" {...props} />
-    </div>
-  ),
-  tr: ({ ...props }: React.HTMLAttributes<HTMLTableRowElement>) => (
-    <tr className="m-0 p-0 even:bg-white" {...props} />
-  ),
-  th: ({ ...props }) => (
-    <th
-      className="border border-gray-400 bg-white px-4 py-2 text-left font-semibold [&[align=center]]:text-center [&[align=right]]:text-right"
-      {...props}
-    />
-  ),
-  td: ({ ...props }) => (
-    <td
-      className="border border-gray-400 px-4 py-2 text-left [&[align=center]]:text-center [&[align=right]]:text-right"
-      {...props}
-    />
-  ),
-  code: ({ className, ...props }: React.HTMLAttributes<HTMLElement>) => (
-    <code
-      className={clsxm(
-        "relative rounded border bg-gray-300 bg-opacity-25 py-[0.2rem] px-[0.3rem] font-mono text-base text-gray-600",
-        className
-      )}
-      {...props}
-    />
-  ),
-  pre: Pre,
 };
 
 const getPost = (params: Params) => {
@@ -110,22 +38,21 @@ export async function generateMetadata({ params }: { params: Params }) {
 
 const BlogPage = async ({ params }: { params: Params }) => {
   const post = getPost(params);
-  const tweetDataCache = await getAllTweetData();
-  const tweetData = tweetDataCache.data;
   const Content = getMDXComponent(post.body.code);
 
-  const StaticTweet = ({ id }: { id: keyof typeof tweetData }) => {
-    // Use the tweets map that is present in the outer scope to get the content associated with the id passed as prop
-    // return <Tweet data={tweetData[id]} />;
-    return <Tweet id={id} />
-  };
-
   return (
-    <div className="container relative py-6 lg:py-10">
-      <Link className="flex text-sm items-center space-x-2 mb-4" href="/">
-        <ArrowLeftIcon className="w-8 h-8" />
-        <p>back?</p>
-      </Link>
+    <div className="relative py-6 lg:gap-10 lg:py-8 xl:grid xl:grid-cols-[1fr_300px]">
+      <div className="mx-auto w-full min-w-0">
+        <article>
+          <Content components={{ ...CodeBlocks }} />
+        </article>
+      </div>
+      <div className="hidden text-sm xl:block">
+        <PostTableOfContent source={post.body.raw} />
+      </div>
+      {/* 
+
+
       <div className="grid gap-2 text-center">
         <h1 className="mt-2 inline-block text-md font-extrabold leading-tight text-slate-900 lg:text-2xl">
           {post.title}
@@ -139,9 +66,9 @@ const BlogPage = async ({ params }: { params: Params }) => {
           <TableOfContents source={post.body.raw} />
         </div>
         <article className="max-w-full px-4 pb-8 text-dark  order-2 lg:order-1 lg:max-w-3xl">
-          <Content components={{ ...CodeBlocks, StaticTweet }} />
+          >
         </article>
-      </div>
+      </div> */}
     </div>
   );
 };

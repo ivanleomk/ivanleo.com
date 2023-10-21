@@ -16,10 +16,6 @@ I recently wrote an article on how to implement magic links with Next-Auth, Next
 I fixed everything together into a template which you can clone and use to start your own project [here](https://github.com/ivanleomk/next-auth-resend-kysely)
 </Callout>
 
-Original exploration was inspired by Dax's tweet below
-
-<StaticTweet id="1651434348174778370" />
-
 I've always prefered kysely over Prisma since it gives me much more flexibility and is significantly faster on the edge. So I figured that I would switch over to using their new adapter once it was released.
 
 Next auth handles the authentication for us. When a user tries to login, we send them an email with a link. The link contains a token that is valid for 5 minutes. When the user clicks the link, we verify the token and log them in. `Resend` takes care of the email sending and `Kysely` takes care of the database queries. 

@@ -1,7 +1,7 @@
 import { allPosts } from '@/.contentlayer/generated'
 import { getMDXComponent } from 'next-contentlayer/hooks'
 import React from 'react'
-import { CodeBlocks } from '../blog/[name]/page'
+import { CodeBlocks } from '../components/CodeBlocks'
 
 const getWorklogPost = () => {
 

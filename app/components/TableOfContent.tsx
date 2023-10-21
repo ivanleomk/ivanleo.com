@@ -73,7 +73,6 @@ const TableOfContents = ({ source }: TOCProps) => {
     .split("\n")
     .filter((line) => line.match(/^#{2,5}\s/));
 
-
   const generateSpacing = (level: 1 | 2 | 3 | 4 | 5) => {
     switch (level) {
       case 1:
@@ -84,7 +83,7 @@ const TableOfContents = ({ source }: TOCProps) => {
       case 4:
         return "pl-12";
       case 5:
-        return "pl-16"
+        return "pl-16";
     }
   };
 
