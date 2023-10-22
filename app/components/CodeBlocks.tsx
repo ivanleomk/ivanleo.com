@@ -1,17 +1,10 @@
-import { allPosts } from "@/.contentlayer/generated";
 import React from "react";
-import { getMDXComponent } from "next-contentlayer/hooks";
-import { ArrowLeftIcon } from "@heroicons/react/24/outline";
-import Link from "next/link";
 import CodeTitle from "@/app/components/CodeTitle";
 import { clsxm } from "@/app/utils/css";
 import Callout from "@/app/components/Callout";
 import KommyImage from "@/app/components/KommyImage";
 import KommyLink from "@/app/components/KommyLink";
 import Pre from "@/app/components/Pre";
-import { getAllTweetData } from "@/app/utils/tweet";
-import TableOfContents from "@/app/components/TableOfContent";
-import { Tweet } from "react-tweet";
 import "katex/dist/katex.min.css";
 //@ts-ignore
 import { InlineMath, BlockMath } from "react-katex";
@@ -19,7 +12,7 @@ import { InlineMath, BlockMath } from "react-katex";
 export const CodeBlocks = {
   h2: ({ ...props }) => (
     <h2
-      className="scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight first:mt-0"
+      className="scroll-m-20 mt-4 border-b pb-2 text-3xl font-semibold tracking-tight first:mt-0"
       {...props}
     />
   ),

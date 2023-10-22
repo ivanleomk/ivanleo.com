@@ -9,16 +9,29 @@ description: I'm planning to break into the ML side of things - here's what I ha
 draft: true
 ---
 
-## Background
-
-Looking to break into ML and I kind of lose track of what I've been doing so I figured I'd just document everything here.
-
-
 ## The Progress
 
-### September 
+A journal of everything I've accomplished as a Software Engineer interested in learning more about AI.
 
-September proved to be a pretty productive month for me. I managed to achieve the following things 
+### October
+
+I've tried to split my time in two in october - doing more LLM stuff while simultaneously trying to delve deeper into the theory behind more classical machine learning.
+
+I finished up the first 8 lectures of [CS231n](http://cs231n.stanford.edu/) and also completed all of the exercises for [Assignment 1](https://cs231n.github.io/assignments2023/assignment1/).
+
+I also continued reading more papers and have read the following two papers this month
+
+- [CLIP](https://arxiv.org/abs/2103.00020)
+- [GPT4V Evaluation Paper](https://arxiv.org/pdf/2309.17421.pdf)
+
+This month I worked on two main projects
+
+- [Using GPT4 To generate React Components using the @shadcn/ui library](/blog/replacing_a_5_week_in_junior_intern)
+- [Creating an Arxiv Crawler]()
+
+### September
+
+September proved to be a pretty productive month for me. I managed to achieve the following things
 
 1. I started reading more papers - I read a total of 4 new papers in September including the [LLama 2 paper](https://dump.ivanleo.com/LLama-2), [Less is more For Instruction (LIMA)](https://dump.ivanleo.com/Less-is-More-For-Alignment), [Anthropic's Constituitional AI paper](https://dump.ivanleo.com/Constituitional-AI---Harmlessness-from-AI-Feedback) and the new paper on the [RWKV architecture](https://dump.ivanleo.com/RWKV-Reinventing-RNNs-For-The-Transformer-Era)
 
@@ -26,34 +39,32 @@ September proved to be a pretty productive month for me. I managed to achieve th
 
 3. I launched a new site to collate all my notes - you can check it out [here](https://dump.ivanleo.com)
 
-4. I started participating in Kaggle competitions 
+4. I started participating in Kaggle competitions
 
 5. I finally finished up a LLM red-team challenge I called The Chinese Wall. I did a small write up [here](/blog/reinventing_gandalf) which also includes a small writeup on the discord bot that I built to accompany it.
 
-### August 
+### August
 
 - Finished tidying up a [repo](https://github.com/ivanleomk/Zero-To-Hero-notes) with notes that I'd taken down on Karpathy's course. Currently we have part 1,2 and 3 in there.
-- Read up a bit on the paper that he mentioned - [A Neural Probablistic Model](https://www.jmlr.org/papers/volume3/bengio03a/bengio03a.pdf) which mentions the use of a real-number vector to represent words. This is currently used extensively in NLP and is known as word embeddings but back then I'm sure it must have been a novel idea. 
-- Played around with the new Next Auth Kysely integration and Resend and wrote a quick article [here](blog/implementing_magic_links_with_resend_kysely_and_next_auth) - Started working on a small tool as part of Buildspace s4  to help people prep for interviews using GPT-4 and some other models called [Prep With AI](https://prepwithai.com) which uses a bunch of the different things that I wrote about
+- Read up a bit on the paper that he mentioned - [A Neural Probablistic Model](https://www.jmlr.org/papers/volume3/bengio03a/bengio03a.pdf) which mentions the use of a real-number vector to represent words. This is currently used extensively in NLP and is known as word embeddings but back then I'm sure it must have been a novel idea.
+- Played around with the new Next Auth Kysely integration and Resend and wrote a quick article [here](blog/implementing_magic_links_with_resend_kysely_and_next_auth) - Started working on a small tool as part of Buildspace s4 to help people prep for interviews using GPT-4 and some other models called [Prep With AI](https://prepwithai.com) which uses a bunch of the different things that I wrote about
 
-### July 
+### July
 
 I wasn't able to do as much as I wanted due to reservice commitments but I did manage to get a few things done.
 
 - Discovered Andrej Karpathy's [Zero to Hero course](https://karpathy.ai/zero-to-hero.html) and plan to start working through it through August. So far I've finished up with his intro to neural networks and I built a basic binary classifier which has ~42% accuracy using a custom neural network I coded in vanila python. Finished up with the first 2 chapters of his course and I'm really enjoying it so far.
 
-- Finally figured out how to deploy [langchain on AWS lambda](blog/ci_cd_with_langchain_aws_lambda_using_docker_image) and spent my entire weekend trying to automate a 20 min task with aws sdk 
+- Finally figured out how to deploy [langchain on AWS lambda](blog/ci_cd_with_langchain_aws_lambda_using_docker_image) and spent my entire weekend trying to automate a 20 min task with aws sdk
 
 ### June
 
-June has just started and my plan now is to work on more applications of LLMs. I believe that using LLMs to augment my learning will help tremendously when it comes to generating new insights and finding interesting angles to explore. 
+June has just started and my plan now is to work on more applications of LLMs. I believe that using LLMs to augment my learning will help tremendously when it comes to generating new insights and finding interesting angles to explore.
 
 The plan is to build a local LLM using gpt to be able to query and discover new insights about my previous notes and chats. I tried implementing a basic clone with memory and embeddings [here](blog/why_use_chat_gpt_when_you_can_build_your_own_) but ended up getting side tracked with other ideas.
 
 I also started experimenting with Open AI Functions and built out a simple classifier using Yake and GPT that was able to classify places that I had been to before using my reviews and other metadata ( [Link](blog/crawling_your_saved_places_with_google_maps) )
 
-
 ### May
 
-I've managed to finish up Part 1 of Fast AI's course and boy have I learnt a lot about machine learning in general. The course seems to cover a lot more of traditional machine learning techniques and there's a lot which I'll definitely need to revisit.  You can read my notes here [FastAI Part 1](/blog/notes_on_fast_ai)
-
+I've managed to finish up Part 1 of Fast AI's course and boy have I learnt a lot about machine learning in general. The course seems to cover a lot more of traditional machine learning techniques and there's a lot which I'll definitely need to revisit. You can read my notes here [FastAI Part 1](/blog/notes_on_fast_ai)

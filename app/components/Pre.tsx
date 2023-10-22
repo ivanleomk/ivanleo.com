@@ -24,7 +24,7 @@ export default function Pre({ className, ...props }: IPre) {
         aria-label="Copy code"
         type="button"
         className={clsxm(
-          "absolute right-3 bottom-3 z-50 h-9 w-9 rounded border bg-slate-900 p-1 hover:bg-slate-700",
+          "absolute right-3 bottom-3 z-10 h-9 w-9 rounded border bg-slate-900 p-1 hover:bg-slate-700",
           copied
             ? "border-green-400 focus:border-green-400 focus:outline-none"
             : "border-gray-300"
