@@ -1,0 +1,128 @@
+---
+title: Deriving the Derivative for a softmax cross entropy
+date: 2023-10-23
+categories:
+  - CS231n
+  - Mathematics
+  - Machine Learning
+description: A simple walkthrough to deriving the derivative ( with code ) for the cross entropy loss
+---
+
+## Introduction
+
+I recently spent some time working on Assignment 1 for CS231n and as part of it, we needed to manually calculate the derivative of the softmax cross entropy loss to update the weights of a two-layer neural network manually. This was a bit complicated and I struggled for a good 2-3 days before I managed to understand how all the parts fit together.
+
+Let's start by working through some key definitions. In order to understand everything, you'll need to have an understanding of the following few things
+
+1. The Chain Rule
+2. What is a Softmax and how can we calculate its derivative
+3. What is the cross-entropy loss
+4. How can we apply the chain rule to more complex derivatives
+
+Once we've gotten a hang of all these concepts, we'll get to the juicy part - deriving the derivative of the softmax cross-entropy loss.
+
+> I assume you've got a rough understanding of derivatives. I try to give a basic understanding of how to derive the derivatives below but it'll make much more sense if you spent a few minutes looking through your old calculus notebook. :)
+
+## Chain Rule
+
+The chain rule can be understood with the following equation.
+
+<BlockMath math="\frac{dy}{dx} = \frac{dy}{du} \times \frac{du}{dx}" />
+
+Let's see a more concret example. Let's say that we have the following two equations.
+
+<BlockMath math="z = 2x + y" />
+<BlockMath math="x = a - 3b" />
+
+and we assume that we have the following values where <InlineMath math="a=10,b=1,y=3" />. This means that we can in turn derive the following values.
+
+<BlockMath math="x = 10 - 3 \times 1 = 7" />
+<BlockMath math="z = 2\times (7) + 3 = 17" />
+
+The chain rule would come in useful if we wanted to know how a change in the value of <InlineMath math = "b" /> might affect something like <InlineMath math = "z" />. We could of course inline a and b directly into the equation above in this simple example but you'll find that this might not always be the case for more complex examples.
+
+Let's first try to compute how <InlineMath math = "z" /> changes when we change the value of <InlineMath math = "x" />. Well, in our previous example, we had <InlineMath math = "x=7" />. What happens if we use <InlineMath math = "x = 6" /> and <InlineMath math = "x = 8" />?
+
+Well, we can calculate the new sums of what <InlineMath math = "z" /> would be assuming that <InlineMath math = "y" /> remains constant. In our case, we notice that when <InlineMath math = "x = 6" />, we get <InlineMath math = "z = 15" /> whereas when <InlineMath math = "x = 7" />, we get <InlineMath math = "z = 17" />. This means that effectively, everytime we modify the value of <InlineMath math = "x" /> by 1, we observe a corresponding change in the value of <InlineMath math = "z" /> of 2. We can write this more formally as
+
+<BlockMath math="\frac{dz}{dx}=2" />
+
+Let's apply a similar logic to find how the value of <InlineMath math = "x" /> changes when we modify <InlineMath math = "b" /> by 1. If we perform the same steps, we'll find that
+
+<BlockMath math="\frac{dx}{db}=-3" />
+
+Well, how can we then apply this to find the value of <InlineMath math = "\frac{dz}{db}" />? Well, the chain rule tells us that
+
+<BlockMath math="\frac{dz}{db}= \frac{dz}{dx} \times \frac{dx}{db} = 2 \times (-3) = -6" />
+
+So, with that we now know how to calculate derivatives for variables that are linked via a series of equations. Let's now move on to what the softmax is.
+
+## Softmax
+
+### What is the Softmax Function
+
+Let's imagine that we had three possible events - get a candy, get a toy or get a cake every time we go visit our grand parents. If we visit them 10 times and out of the 10 times, we have
+
+- 3 candies
+- 3 toys
+- 4 cakes
+
+We could in turn represent the total distribution of events as
+
+```py
+counts = [3,3,4]
+```
+
+But we could convert this to a probability distribution by taking
+
+<BlockMath math="P(\text{Get A Toy}) = \frac{3}{3 + 3 + 4} = \frac{3}{10}" />
+
+The Softmax Function works kind of similarly. It allows us to work with purely positive numbers no matter what the inputs with an exponential are and then normalises them to a vector of floats that we can treat as a probability distrbution. We can see it below as
+
+<BlockMath math="S(x_i) = \frac{e^{x_i}}{\sum_{j=0}^n e^{x_j}}" />
+
+But what exactly does this specific function do and why is it so commonly used? This is useful because we have a whole variety of different methods that have been developed over many years to work with these Probability distributions.
+
+### Numerical Instability
+
+Normally we stick a softmax after multiplying some inputs by a bunch of weights. This means that the values coming into the softmax will range from <InlineMath math = "-\infty,\infty" />. By using an exponential, we ensure that we get values that range from <InlineMath math = "0,\infty" />. You can see this from the graph below.
+
+<img src="/images/exponential.jpeg" alt="Softmax Function" />
+
+However, we're representing our values in code as floating point numbers. These are finite representations which cannot represent infinite values. Therefore, we can get some funky behaviour once we get large numbers. But, this doesn't even happen when we reach super large numbers.
+
+```py
+x = [-10,-1,1000]
+np.exp(x) / np.sum(np.exp(x))
+
+> <ipython-input-4-c0960e0e33eb>:2: RuntimeWarning: overflow encountered in exp
+  np.exp(x) / np.sum(np.exp(x))
+> <ipython-input-4-c0960e0e33eb>:2: RuntimeWarning: invalid value encountered in divide
+  np.exp(x) / np.sum(np.exp(x))
+> array([ 0.,  0., nan])
+```
+
+This poses a problem. If our numbers are too large, how can we ensure we are able to get the same probability distribution without integer overflow. Well, it turns out since Softmax is a monotonically increasing function, we can do the following and still achieve the same distributions.
+
+> For a more complex walkthrough, here's an explanation by [Jay K Mody](https://jaykmody.com/blog/stable-softmax/). A detailed walkthrough of softmax numerical instability is out of scope for this article.
+
+```py
+x = [-10,-1,1000]
+x = x - np.max(x)
+np.exp(x) / np.sum(np.exp(x))
+
+> This yields [0,0,1]
+```
+
+This brings us to a numerically stable implementation of the softmax as seen below.
+
+```py
+def softmax(x):
+    # assumes x is a vector
+    x = x - np.max(x)
+    return np.exp(x) / np.sum(np.exp(x))
+```
+
+### Calculating the Derivative
+
+Now, let's move on to figuring out what the derivative is. Specifically, given an input <InlineMath math = "x_j" /> we
