@@ -17,7 +17,7 @@ export default function Home() {
   return (
     <div className="flex-1 mb-6">
       <div className="container relative">
-        <section className="flex max-w-[1100px] flex-col items-start gap-2 px-4 pt-8 md:pt-12 pb-8">
+        <section className="flex max-w-[1100px] flex-col items-start gap-2 md:px-4 pt-8 md:pt-12 pb-8">
           <h1 className="text-3xl font-bold leading-tight tracking-tighter md:text-5xl lg:leading-[1.1]">
             Welcome
           </h1>

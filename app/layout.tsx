@@ -50,8 +50,8 @@ export default function RootLayout({
       />
       <body className="">
         <SiteHeader />
-        <div className="container mx-auto pt-2 max-w-6xl">
-          <div className="mx-4 w-full">{children}</div>
+        <div className="md:max-w-6xl mx-auto pt-2 md:container">
+          <div className="mx-2 w-90">{children}</div>
         </div>
       </body>
     </html>
