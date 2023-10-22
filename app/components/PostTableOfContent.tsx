@@ -5,13 +5,14 @@ import Link from "next/link";
 
 type Props = {
   source: string;
+  postClickHook?: () => void;
 };
 
-const PostTableOfContent = ({ source }: Props) => {
+const PostTableOfContent = ({ source, postClickHook }: Props) => {
   const headings = source.split("\n").filter((line) => line.match(/^#{2,3}\s/));
   return (
-    <div className="sticky top-16 -mt-10 pt-4">
-      <p className="font-medium">On This Page</p>
+    <div className="sticky top-16 pt-4">
+      <p className="hidden lg:block mt-10">On This Page</p>
       <ul className="m-0 list-none">
         {headings.map((raw) => {
           const level = raw.match(/^###*\s/)?.at(0)?.length;
@@ -31,6 +32,9 @@ const PostTableOfContent = ({ source }: Props) => {
                   e.preventDefault();
                   console.log(id);
                   const element = document.querySelector<any>(`#${id}`);
+                  if (postClickHook) {
+                    postClickHook();
+                  }
                   const y =
                     element.getBoundingClientRect().top +
                     window.pageYOffset -

@@ -12,7 +12,6 @@ import { buttonVariants } from "./components/ui/button";
 import { Github, Twitter } from "lucide-react";
 import SiteHeader from "./components/SiteHeader";
 
-
 export const metadata = {
   title: "Ivan Leo",
   description:
@@ -51,7 +50,7 @@ export default function RootLayout({
       />
       <body className="">
         <SiteHeader />
-        <div className="container mx-auto pt-2 max-w-4xl">
+        <div className="container mx-auto pt-2 max-w-6xl">
           <div className="mx-4 w-full">{children}</div>
         </div>
       </body>

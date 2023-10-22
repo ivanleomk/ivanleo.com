@@ -2,6 +2,7 @@ import { allPosts } from "@/.contentlayer/generated";
 import PostCard from "@/app/components/PostCard";
 import SectionHeader from "@/app/components/SectionHeader";
 import { ArrowLeftIcon } from "@heroicons/react/24/outline";
+import { compareDesc } from "date-fns";
 import Link from "next/link";
 import React from "react";
 
@@ -10,13 +11,17 @@ type Params = {
 };
 
 const getPosts = (params: Params) => {
-  return allPosts.filter((item) => {
-    return (
-      item.parsed_tags.filter((tag: { name: string; slug: string }) => {
-        return tag.slug === params.name;
-      }).length > 0
-    );
-  });
+  return allPosts
+    .filter((item) => {
+      return (
+        item.parsed_tags.filter((tag: { name: string; slug: string }) => {
+          return tag.slug === params.name;
+        }).length > 0
+      );
+    })
+    .sort((a, b) => {
+      return compareDesc(new Date(a.date), new Date(b.date));
+    });
 };
 
 const Page = ({ params }: { params: Params }) => {
