@@ -77,17 +77,17 @@ But we could convert this to a probability distribution by taking
 
 <BlockMath math="P(\text{Get A Toy}) = \frac{3}{3 + 3 + 4} = \frac{3}{10}" />
 
-The Softmax Function works kind of similarly. It allows us to work with purely positive numbers no matter what the inputs with an exponential are and then normalises them to a vector of floats that we can treat as a probability distrbution. We can see it below as
+The Softmax Function works kind of similarly. It allows us to take any arbitrary numbers and then convert them to a purely positive range. This is because of how the expoential function <InlineMath math = "e^x" /> behaves. You can see this from the graph below.
+
+<img src="/images/exponential.jpeg" alt="Softmax Function" />
+
+By normalising our inputs to the positive ranges, we've now obtained "counts" of our target variables. We can then normalise these counts, similiar to the example above to a vector of floats that we can treat as a probability distribution. This is done by applying the formula of
 
 <BlockMath math="S(x_i) = \frac{e^{x_i}}{\sum_{j=0}^n e^{x_j}}" />
 
-But what exactly does this specific function do and why is it so commonly used? This is useful because we have a whole variety of different methods that have been developed over many years to work with these Probability distributions.
+In fact, this is how we've chosen to interpret the result of most models, GPT models have a softmax layer at the end of their output layers which we then sample from to generate the next token. Using probability distributions also gives us more interesting results. ( _Note_ : in Anthropic's constituitional AI paper, they constrain the probability of generate outputs to ~40 - 60%. So we can see how we can take a raw probability distribution using the softmax and then modify it to generate a smaller distribution )
 
 ### Numerical Instability
-
-Normally we stick a softmax after multiplying some inputs by a bunch of weights. This means that the values coming into the softmax will range from <InlineMath math = "-\infty,\infty" />. By using an exponential, we ensure that we get values that range from <InlineMath math = "0,\infty" />. You can see this from the graph below.
-
-<img src="/images/exponential.jpeg" alt="Softmax Function" />
 
 However, we're representing our values in code as floating point numbers. These are finite representations which cannot represent infinite values. Therefore, we can get some funky behaviour once we get large numbers. But, this doesn't even happen when we reach super large numbers.
 
@@ -125,4 +125,154 @@ def softmax(x):
 
 ### Calculating the Derivative
 
-Now, let's move on to figuring out what the derivative is. Specifically, given an input <InlineMath math = "x_j" /> we
+Now, let's move on to figuring out what the derivative is. Specifically, given an input <InlineMath math = "x_j" /> we want to calculate it's impact on a final softmax output <InlineMath math = "S_i" /> where we have an input size of <InlineMath math = "n" />. Let's start by writing out our equation.
+
+<BlockMath math="S_i = \frac{e^{x_i}}{\sum_{k=0}^n e^{x_k}}" />
+
+And we want to find
+
+<BlockMath math="\frac{\delta S_i}{\delta x_j} = \frac{1}{\delta x_j} [ \frac{e^{x_i}}{\sum_{k=0}^n e^{x_k}} ]" />
+
+Let's first do a quick substituition where <InlineMath math = "u = e^{x_i}, v = e^{x_j} + \sum_{k=0,k \neq j} e^{x_k}" />. (Note here that we've simply pulled out our <InlineMath math = "e^{x_j}" /> term out of our original summation.) This means we can rewrite our original equation now as
+
+<BlockMath math="S(x_i) = \frac{u}{v}" />
+
+Which allows us to apply the quotient rule that states that
+
+<BlockMath math="\frac{\delta S(x_i)}{x_j} = \frac{v\frac{\delta u}{\delta x_j} - u\frac{\delta v}{ \delta x_j}}{v^{2}}" />
+
+which we can then rewrite as
+
+<BlockMath math="\frac{\delta S(x_i)}{x_j} = \frac{(e^{x_j} + \sum_{k=0,k \neq j} e^{x_k}) \frac{1}{\delta x_j} [e^{x_i}] - e^{x_i} \frac{1}{\delta x_j} [e^{x_j} + \sum_{k=0,k \neq j} e^{x_k}] }{(e^{x_j} + \sum_{k=0,k \neq j} e^{x_k})^2}" />
+
+Before we walkthrough the answer, note the following
+
+- we're taking the derivative with respect to <InlineMath math = "x_j" />
+- if <InlineMath math = "y = e^x" />, then this means that <InlineMath math = "\frac{\delta y}{ \delta x} = e^x" />
+- if <InlineMath math = "y = e^{x_i}" /> and we take the derivative with respect to <InlineMath math = "x_j" />, then this means that we can treat <InlineMath math = "e^{x_i}" /> as a constant, and <InlineMath math = "\frac{\delta y}{\delta x_j} = 0" />
+
+Let's now apply this new form to solve the two cases.
+
+<b>
+  Case 1 : <InlineMath math="i \neq j" />
+</b>
+
+With the points above, we can rewrite our derivative and simplify it as
+
+<BlockMath math="\begin{equation} \begin{split}  \frac{\delta S(x_i)}{x_j} &= \frac{(e^{x_j} + \sum_{k=0,k \neq j} e^{x_k}) 0 - e^{x_i} (e^{x_j}) }{(\sum_{k=0}^n e^{x_k})^2} \\ &= \frac{-e^{x_i} (e^{x_j})}{(\sum_{k=0}^n e^{x_k})^2} \end{split} \end{equation}" />
+
+If you're confused about why the huge term <InlineMath math = "e^{x_j} + \sum_{k=0,k \neq j} e^{x_k}" /> was simplified, consider the fact that there are no terms expressed in terms of <InlineMath math = "x_j" /> in that summation and that <InlineMath math = "y = e^{x_j}" /> implies that <InlineMath math = "\frac{\delta y}{\delta x_j} = e^{x_j}" />. Now, our derivative looks a little scary but if we rewrite it a little bit, we get the following
+
+<BlockMath math="\begin{equation} \begin{split} \frac{\delta S(x_i)}{\delta x_j} &= -\frac{e^{x_i}}{\sum_{k=0}^n e^{x_k}} \times \frac{e^{x_j}}{\sum_{k=0}^n e^{x_k}} \\ &= -S(x_i) S(x_j)  \end{split} \end{equation}" />
+
+<b>
+  Case 2 : <InlineMath math="i = j" />
+</b>
+
+In this case, we can rewrite our equation as
+
+<BlockMath math="\frac{\delta S(x_i)}{x_i} = \frac{(e^{x_i} + \sum_{k=0,k \neq i}^n e^{x_k}) \frac{1}{\delta x_i} [e^{x_i}] - e^{x_i} \frac{1}{\delta x_i} [e^{x_i} + \sum_{k=0,k \neq j}^n e^{x_k}] }{(e^{x_i} + \sum_{k=0,k \neq i}^n e^{x_k})^2}" />
+
+Which is going to be simplified to
+
+<BlockMath math="\begin{equation} \begin{split} \frac{\delta S(x_i)}{x_i} &= \frac{(e^{x_i} + \sum_{k=0,k \neq i} e^{x_k}) e^{x_i} - e^{x_i} ( e^{x_i} ) }{(\sum_{k=0}^n e^{x_k})^2} \\ &= \frac{e^{x_i} (\sum_{k=0,k \neq i} e^{x_k}) }{(\sum_{k=0}^n e^{x_k})^2} \\ &= \frac{e^{x_i} ((\sum_{k=0}^n e^{x_k}) - e^{x_i}) }{(\sum_{k=0}^n e^{x_k})^2} \\ &= S(x_i) ( 1 - S(x_i))  \end{split} \end{equation}" />
+
+This therefore means that we can express our derivative in these two cases
+
+<BlockMath
+  math="\frac{\delta S(x_i)}{x_j} = \begin{cases}
+  S(x_i) ( 1 - S(x_i))  & i = j \\
+  -S(x_i) S(x_j) & i \neq j
+\end{cases}"
+/>
+
+## Cross-Entropy Loss
+
+The Cross Entropy loss is commonly used when we have a model that we want to train to be able to classify an input into a specific class or multiple classes. In this article and example, we'll be looking at the case whereby we're trying to classify an input into a specific class.
+
+### Loss Functions
+
+When we have a loss function, we can take a prediction <InlineMath math = "x" /> and compute how good it is w.r.t some ground truth. This means that the better the predictions, <b>the lower the loss</b>. Our goal in doing so is to create a single objective number that we can look to slowly minimise.
+
+Conceptually, this is because minimising a loss function means driving it as close to 0. If we tried to create a loss that we could maximise instead, then we simply wouldn't be able to maximise it since it would span from <InlineMath math = "0,\infty" />.
+
+So this brings us to two simple characteristics of a loss function
+
+- It has to have a range between <InlineMath math = "0,\infty" />. If not we would be minimising towards <InlineMath math = "-\infty" />.
+- The better our predictions, the lower our loss should be
+
+### Softmax and the Loss
+
+We can see that our softmax outputs a vector which contains probabilities. These will range from 0 to 1. In our case, since we are looking to make a correct prediction, ideally our probability for the correct class should be 1. When it's a bad prediction, it will be close to 0.
+
+If we took the raw probability as the loss, then this would mean that the better our predictions, the higher our loss. That's where the Cross-Entropy Loss comes in. It has the formula of
+
+<BlockMath math="L = -\sum_{i=0}^n t_i log(S(X_i))" />
+
+where <InlineMath math = "t_i" /> represents the predicted label for the i-th class and <InlineMath math = "y_i" /> represents the predicted probability that our softmax produces for the specific class <InlineMath math = "i" />. Since a item either belongs or does not belong to a class, this means that <InlineMath math = "t_i" /> can only take on the values of <InlineMath math = "0,1" />. Since we're predicting for a single class, this also means that essentially have the following sum
+
+<BlockMath math="L = -(0 \times log(S(X_0)) + 0 \times log(S(X_1)) + \dots + 1 \times log(S(X_i)) )" />
+
+Which brings our loss to
+
+<BlockMath math="L = -log(S(x_i))" />
+
+where <InlineMath math = "i" /> represents the index of the correct class. This derivative is simply to calculate and is just
+
+<BlockMath
+  math="
+  \frac{\delta L}{\delta S(x_i)} = - \frac{1}{S(x_i)} 
+"
+/>
+
+## Bringing It All Together
+
+We've now found two equations. The first is the cross entropy loss with respect to a specific softmax value.
+
+<BlockMath
+  math="
+  \frac{\delta L}{\delta S(x_i)} = - \frac{1}{S(x_i)} 
+"
+/>
+
+The second is the softmax value w.r.t its original inputs.
+
+<BlockMath
+  math="\frac{\delta S(x_i)}{x_j} = \begin{cases}
+  S(x_i) ( 1 - S(x_i))  & i = j \\
+  -S(x_i) S(x_j) & i \neq j
+\end{cases}"
+/>
+
+We can simply apply the chain rule to get the derivative of the loss w.r.t the original inputs to the softmax.
+
+<b>
+  Case 1 : <InlineMath math="i \neq j" />
+</b>
+
+<BlockMath math="\begin{equation}\begin{split} \frac{\delta L}{\delta x_j} &= \frac{\delta L}{\delta S(x_i)} \times \frac{\delta S(x_i)}{x_j} \\ &= -\frac{1}{S(x_i)} \times -S(x_i) S(x_j) \\ &= S(x_j) \end{split}\end{equation}" />
+
+<b>
+  Case 2 : <InlineMath math="i = j" />
+</b>
+
+<BlockMath math="\begin{equation}\begin{split} \frac{\delta L}{\delta x_j} &= \frac{\delta L}{\delta S(x_i)} \times \frac{\delta S(x_i)}{x_j} \\ &= -\frac{1}{S(x_i)} \times S(x_i) ( 1 - S(x_i))  \\ &= S(x_i) - 1 \end{split}\end{equation}" />
+
+We can write this in a case form as
+
+<BlockMath
+  math="\frac{\delta L}{\delta x_j} = \begin{cases}
+  S(x_i)-1  & i = j \\
+  S(x_j) & i \neq j
+\end{cases}"
+/>
+
+This makes the derivative back propogation facile to implement in python as an if-else
+
+```py
+for j in range(len(inputs)):
+  if j == y[i]:
+      dW[:,j] += (-1 + softmax_output)
+  else:
+      dW[:,j] += softmax_output
+```
