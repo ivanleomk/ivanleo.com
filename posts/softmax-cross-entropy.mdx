@@ -190,7 +190,7 @@ This therefore means that we can express our derivative in these two cases
 
 The Cross Entropy loss is commonly used when we have a model that we want to train to be able to classify an input into a specific class or multiple classes. In this article and example, we'll be looking at the case whereby we're trying to classify an input into a specific class.
 
-### Loss Functions
+### Loss Function
 
 When we have a loss function, we can take a prediction <InlineMath math = "x" /> and compute how good it is w.r.t some ground truth. This means that the better the predictions, <b>the lower the loss</b>. Our goal in doing so is to create a single objective number that we can look to slowly minimise.
 
@@ -224,6 +224,20 @@ where <InlineMath math = "i" /> represents the index of the correct class. This 
   \frac{\delta L}{\delta S(x_i)} = - \frac{1}{S(x_i)} 
 "
 />
+
+### Why use the Negative Log Probability
+
+Now that we have a rough idea of what the loss function looks like, let's take a step back to think about why we might want to use the negative log probability. A good place to start is to look at how log behaves for the range 0 to 1.
+
+<img src="/images/log_graph.png" />
+
+As we can see from the graph, as our value of x goes from, the value of <InlineMath math = "y = log(x)" /> goes from <InlineMath math = "-\infty" /> to 0.This fits one of the key characteristics of our loss function - which is that we want a smaller value to be produced as our predictions improve.
+
+However, we're still faced with a small problem, we need our loss function to output positive results. To fix this, we just multiply the loss by <InlineMath math = "-1" /> to get <InlineMath math = "y = -log(x)" />. This gives the graph below.
+
+<img src="/images/negative_log.png" />
+
+With this, we have the two properties of a loss function that we originally wanted.
 
 ## Bringing It All Together
 
