@@ -192,6 +192,8 @@ The Cross Entropy loss is commonly used when we have a model that we want to tra
 
 ### Loss Function
 
+> The use of a positive loss function holds for a majority of loss functions that you'll see. There are some cases whereby loss functions seek to maximise a negative value and drive it closer to 0 as seen [here](https://www.c-sharpcorner.com/article/negative-loss-functions-in-generative-models/) but they are quite rare from my personal experience.
+
 When we have a loss function, we can take a prediction <InlineMath math = "x" /> and compute how good it is w.r.t some ground truth. This means that the better the predictions, <b>the lower the loss</b>. Our goal in doing so is to create a single objective number that we can look to slowly minimise.
 
 Conceptually, this is because minimising a loss function means driving it as close to 0. If we tried to create a loss that we could maximise instead, then we simply wouldn't be able to maximise it since it would span from <InlineMath math = "0,\infty" />.
@@ -237,7 +239,11 @@ However, we're still faced with a small problem, we need our loss function to ou
 
 <img src="/images/negative_log.png" />
 
-With this, we have the two properties of a loss function that we originally wanted.
+With this, we have the two properties of a loss function that we originally wanted. Note that in practice, we normally clip the values of the prediction before passing it into the binary cross entropy since <InlineMath math = "x \to 0, log(x) \to -\infty" />. Therefore we use numpy's clip functionality to clip the small probabilities to some small value as seen below.
+
+```py
+np.clip([0.2,0.4,0.000001,0.2], 1e-7, 1-1e-7)
+```
 
 ## Bringing It All Together
 
