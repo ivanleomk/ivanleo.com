@@ -2,29 +2,11 @@ import { allPosts } from "@/.contentlayer/generated";
 import React from "react";
 import { getMDXComponent } from "next-contentlayer/hooks";
 import Link from "next/link";
-import CodeTitle from "@/app/components/CodeTitle";
-import { clsxm } from "@/app/utils/css";
-import Callout from "@/app/components/Callout";
-import KommyImage from "@/app/components/KommyImage";
-import KommyLink from "@/app/components/KommyLink";
-import Pre from "@/app/components/Pre";
-import { getAllTweetData } from "@/app/utils/tweet";
-import TableOfContents from "@/app/components/TableOfContent";
-import { Tweet } from "react-tweet";
 import "katex/dist/katex.min.css";
 //@ts-ignore
 import { InlineMath, BlockMath } from "react-katex";
 import { CodeBlocks } from "@/app/components/CodeBlocks";
 import PostTableOfContent from "@/app/components/PostTableOfContent";
-import { Menu } from "lucide-react";
-import {
-  Sheet,
-  SheetContent,
-  SheetDescription,
-  SheetHeader,
-  SheetTitle,
-  SheetTrigger,
-} from "@/components/ui/sheet";
 import MobileTableOfContent from "@/app/components/MobileTableOfContent";
 import { cn } from "@/app/lib/utils";
 import { badgeVariants } from "@/app/components/ui/badge";
