@@ -8,10 +8,11 @@ export const navConfig = {
             title: "Work Log",
             href: "/work-log",
         },
-        {
-            title: "Projects",
-            href: "/projects"
-        }, {
+        // {
+        //     title: "Projects",
+        //     href: "/projects"
+        // },
+         {
             title: "Notes",
             href: "https://dump.ivanleo.com"
         }

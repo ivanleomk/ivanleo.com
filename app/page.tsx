@@ -42,14 +42,7 @@ export default function Home() {
             >
               Work Log
             </Link>
-            . I&apos;ve also listed some existing projects{" "}
-            <Link
-              className="font-medium text-primary underline underline-offset-4"
-              href="/projects"
-            >
-              here
-            </Link>
-            . Lastly, to read some of my posts, I recommend heading over to the{" "}
+            . To read some of my posts, I recommend heading over to the{" "}
             <Link
               className="font-medium text-primary underline underline-offset-4"
               href="/posts"
