@@ -20,6 +20,8 @@ export type Post = {
   description: string
   categories?: string[] | undefined
   draft: boolean
+  archive: boolean
+  hide: boolean
   /** MDX file body */
   body: MDX
   url: string

@@ -8,7 +8,7 @@ import SectionHeader from "./components/SectionHeader";
 import { siteConfig } from "./config/site";
 
 const posts = allPosts
-  .filter((item) => !item.draft)
+  .filter((item) => !item.draft && !item.hide && !item.archive)
   .sort((a, b) => {
     return compareDesc(new Date(a.date), new Date(b.date));
   });
@@ -18,39 +18,47 @@ export default function Home() {
     <div className="flex-1 mb-6">
       <div className="container relative">
         <section className="flex max-w-[1100px] flex-col items-start gap-2 md:px-4 pt-8 md:pt-12 pb-8">
-          <h1 className="text-3xl font-bold leading-tight tracking-tighter md:text-5xl lg:leading-[1.1]">
-            Welcome
-          </h1>
-          <span className="max-w-[750px] text-lg text-muted-foreground sm:text-xl">
-            to my little corner of the internet
-          </span>
           <h2 className="mt-10 scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight transition-colors first:mt-0">
             About Me
           </h2>
-          <p className="leading-7 [&:not(:first-child)]:mt-6">
-            {siteConfig.about.description}
-          </p>
-          <h3 className="mt-8 scroll-m-20 text-2xl font-semibold tracking-tight">
-            A Quick Guide
-          </h3>
+          <div
+            dangerouslySetInnerHTML={{
+              __html: siteConfig.about.description,
+            }}
+            className="leading-7 [&:not(:first-child)]:mt-6"
+          />
           <p className="leading-7">
-            You can check out everything that I&apos;ve worked on to understand
-            the AI Space on my{" "}
+            Outside of work, I spend time contributing to libraries such as{" "}
+            <Link
+              className="font-medium text-primary underline underline-offset-4"
+              href="https://jxnl.github.io/instructor/"
+            >
+              Instructor
+            </Link>{" "}
+            or working on side projects to learn more about the space.
+          </p>
+          <p className="leading-7">
+            I've been documenting that journey using a{" "}
             <Link
               className="font-medium text-primary underline underline-offset-4"
               href="/work-log"
             >
               Work Log
-            </Link>
-            . To read some of my posts, I recommend heading over to the{" "}
-            <Link
-              className="font-medium text-primary underline underline-offset-4"
-              href="/posts"
-            >
-              Posts
             </Link>{" "}
-            section.
+            and have recently shipped some interesting projects such as
           </p>
+          <ol className="leading-7 list-disc">
+            <li className="ml-8">
+              <Link
+                href="https://jxnl.github.io/instructor/blog/2023/11/05/chain-of-density/"
+                className="font-medium text-primary underline underline-offset-4"
+              >
+                Finetuning GPT-3.5 to match GPT-4's summarization capabilities
+              </Link>{" "}
+              that produced a model almost 50x cheaper and 20x faster than GPT-4
+              with similar summarization skills
+            </li>
+          </ol>
           <h3 className="mt-8 scroll-m-20 text-2xl font-semibold tracking-tight">
             Recent Posts
           </h3>
@@ -59,7 +67,7 @@ export default function Home() {
             might be interested in.
           </p>
           <ul className="ml-2 [&>li]:mt-2 space-y-4 leading-7">
-            {posts.slice(0, 5).map((item) => {
+            {posts.slice(0, 10).map((item) => {
               return (
                 <li key={item.slug}>
                   <Link

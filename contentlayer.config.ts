@@ -45,7 +45,17 @@ const Post = defineDocumentType(() => ({
       type: "boolean",
       required: false,
       default: false,
-    }
+    },
+    archive: {
+      type: "boolean",
+      required: false,
+      default: false,
+    },
+    hide: {
+      type: "boolean",
+      required: false,
+      default: false,
+    },
   },
   computedFields: {
     url: {

@@ -13,7 +13,6 @@ import fastaiMdx from './fastai.mdx.json' assert { type: 'json' }
 import gptCodeGenerationMdx from './gpt-code-generation.mdx.json' assert { type: 'json' }
 import implementingMagicLinksWithResendAndKyselyAdaptorMdx from './implementing-magic-links-with-resend-and-kysely-adaptor.mdx.json' assert { type: 'json' }
 import machineLearningRoadmapMdx from './machine-learning-roadmap.mdx.json' assert { type: 'json' }
-import mlCsWeek1Mdx from './ml-cs-week1.mdx.json' assert { type: 'json' }
 import neuralNetworksFromScratchMdx from './neural-networks-from-scratch.mdx.json' assert { type: 'json' }
 import reinventingGandalfMdx from './reinventing-gandalf.mdx.json' assert { type: 'json' }
 import softmaxCrossEntropyMdx from './softmax-cross-entropy.mdx.json' assert { type: 'json' }
@@ -21,4 +20,4 @@ import uploadingFilesToR2InNextjsMdx from './uploading-files-to-r2-in-nextjs.mdx
 import usingCloudflareWorkersInNextjsMdx from './using-cloudflare-workers-in-nextjs.mdx.json' assert { type: 'json' }
 import whispersInTheBackgroundMdx from './whispers-in-the-background.mdx.json' assert { type: 'json' }
 
-export const allPosts = [notImplementedErrorFastAiVisionLearnerMdx, aGuideToRwkvMdx, buildingALocalChatgptCloneFromScratchMdx, classifyingDisasterTweetsOnKaggleMdx, clickMeMdx, configuringNextAuthWithNextjsMdx, crawlingGoogleMapsSavedListMdx, deployingADockerContainerOnAzureMdx, deployingLangchainDockerOnAwsMdx, fastaiMdx, gptCodeGenerationMdx, implementingMagicLinksWithResendAndKyselyAdaptorMdx, machineLearningRoadmapMdx, mlCsWeek1Mdx, neuralNetworksFromScratchMdx, reinventingGandalfMdx, softmaxCrossEntropyMdx, uploadingFilesToR2InNextjsMdx, usingCloudflareWorkersInNextjsMdx, whispersInTheBackgroundMdx]
+export const allPosts = [notImplementedErrorFastAiVisionLearnerMdx, aGuideToRwkvMdx, buildingALocalChatgptCloneFromScratchMdx, classifyingDisasterTweetsOnKaggleMdx, clickMeMdx, configuringNextAuthWithNextjsMdx, crawlingGoogleMapsSavedListMdx, deployingADockerContainerOnAzureMdx, deployingLangchainDockerOnAwsMdx, fastaiMdx, gptCodeGenerationMdx, implementingMagicLinksWithResendAndKyselyAdaptorMdx, machineLearningRoadmapMdx, neuralNetworksFromScratchMdx, reinventingGandalfMdx, softmaxCrossEntropyMdx, uploadingFilesToR2InNextjsMdx, usingCloudflareWorkersInNextjsMdx, whispersInTheBackgroundMdx]

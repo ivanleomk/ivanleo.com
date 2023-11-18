@@ -11,6 +11,7 @@ import { cn } from "./lib/utils";
 import { buttonVariants } from "./components/ui/button";
 import { Github, Twitter } from "lucide-react";
 import SiteHeader from "./components/SiteHeader";
+import ContactUs from "./components/ContactUs";
 
 export const metadata = {
   title: "Ivan Leo",
@@ -52,6 +53,7 @@ export default function RootLayout({
         <SiteHeader />
         <div className="md:max-w-6xl mx-auto pt-2 md:container">
           <div className="mx-2 w-90">{children}</div>
+          <ContactUs />
         </div>
       </body>
     </html>
