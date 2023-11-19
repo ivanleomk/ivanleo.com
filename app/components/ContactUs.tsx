@@ -5,7 +5,7 @@ import React from "react";
 const ContactUs = () => {
   return (
     <>
-      <div className="max-w-lg mx-auto mb-10">
+      <div className="max-w-sm px-4 lg:max-w-lg mx-auto mb-10">
         <iframe
           data-tally-src="https://tally.so/embed/nPpZaP?alignLeft=1&hideTitle=1&transparentBackground=1&dynamicHeight=1"
           width="100%"
