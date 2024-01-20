@@ -16,8 +16,9 @@ import machineLearningRoadmapMdx from './machine-learning-roadmap.mdx.json' asse
 import neuralNetworksFromScratchMdx from './neural-networks-from-scratch.mdx.json' assert { type: 'json' }
 import reinventingGandalfMdx from './reinventing-gandalf.mdx.json' assert { type: 'json' }
 import softmaxCrossEntropyMdx from './softmax-cross-entropy.mdx.json' assert { type: 'json' }
+import thingsIDidWronglyInHindsightMdx from './things-i-did-wrongly-in-hindsight.mdx.json' assert { type: 'json' }
 import uploadingFilesToR2InNextjsMdx from './uploading-files-to-r2-in-nextjs.mdx.json' assert { type: 'json' }
 import usingCloudflareWorkersInNextjsMdx from './using-cloudflare-workers-in-nextjs.mdx.json' assert { type: 'json' }
 import whispersInTheBackgroundMdx from './whispers-in-the-background.mdx.json' assert { type: 'json' }
 
-export const allPosts = [notImplementedErrorFastAiVisionLearnerMdx, aGuideToRwkvMdx, buildingALocalChatgptCloneFromScratchMdx, classifyingDisasterTweetsOnKaggleMdx, clickMeMdx, configuringNextAuthWithNextjsMdx, crawlingGoogleMapsSavedListMdx, deployingADockerContainerOnAzureMdx, deployingLangchainDockerOnAwsMdx, fastaiMdx, gptCodeGenerationMdx, implementingMagicLinksWithResendAndKyselyAdaptorMdx, machineLearningRoadmapMdx, neuralNetworksFromScratchMdx, reinventingGandalfMdx, softmaxCrossEntropyMdx, uploadingFilesToR2InNextjsMdx, usingCloudflareWorkersInNextjsMdx, whispersInTheBackgroundMdx]
+export const allPosts = [notImplementedErrorFastAiVisionLearnerMdx, aGuideToRwkvMdx, buildingALocalChatgptCloneFromScratchMdx, classifyingDisasterTweetsOnKaggleMdx, clickMeMdx, configuringNextAuthWithNextjsMdx, crawlingGoogleMapsSavedListMdx, deployingADockerContainerOnAzureMdx, deployingLangchainDockerOnAwsMdx, fastaiMdx, gptCodeGenerationMdx, implementingMagicLinksWithResendAndKyselyAdaptorMdx, machineLearningRoadmapMdx, neuralNetworksFromScratchMdx, reinventingGandalfMdx, softmaxCrossEntropyMdx, thingsIDidWronglyInHindsightMdx, uploadingFilesToR2InNextjsMdx, usingCloudflareWorkersInNextjsMdx, whispersInTheBackgroundMdx]
