@@ -18,7 +18,7 @@ const page = async () => {
 
   return (
     <article className="max-w-3xl mx-auto w-100 pb-20">
-      <p>Last Updated: 20 Jan 2024</p>
+      <p>Last Updated: 25 Feb 2024</p>
       <Content components={{ ...CodeBlocks }} />
     </article>
   );

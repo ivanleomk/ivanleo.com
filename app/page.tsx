@@ -16,6 +16,12 @@ const posts = allPosts
 
 const outsidePosts: { title: string; description: string; href: string }[] = [
   {
+    title: "Embedding English Wikipedia in under 15 minutes",
+    description:
+      "Using Modal to parallelize embeddings with OSS models for a fraction of the cost of Ada",
+    href: "https://modal.com/blog/embedding-wikipedia",
+  },
+  {
     title: "Finetuning GPT-3.5 to match GPT-4's summarization capabilities",
     description:
       "How you can finetune GPT3.5 to be 50x cheaper and 20x faster than GPT-4 with similar summarization skills",
