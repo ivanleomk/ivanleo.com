@@ -120,7 +120,9 @@ That's a huge reduction in the potential issues with my code because I'm now usi
 
 ## Write Simpler Functions
 
-It's pretty easy to write bad functions. In my case, it happens when I try to squeeze everything into a single function or mutate variables shared between different functions. This causes a lot of problems when trying to test the code and for others trying to understand what my code does. I had a pretty complex problem to solve recently with some code - which was to take in a dataset of rows with some text and then embed every sentence inside it. I took some time and wrote an initial draft that looked something like this
+It's pretty easy to write bad functions. In my case, it happens when I try to squeeze everything into a single function or mutate variables shared between different functions. This causes a lot of problems when trying to test the code and for others trying to understand what my code does. 
+
+I had a pretty complex problem to solve recently with some code - which was to take in a dataset of rows with some text and then embed every sentence inside it. I took some time and wrote an initial draft that looked something like this
 
 ``` python
 def get_dataset_batches(data,dataset_mapping:dict[str,int],batch_size=100):
