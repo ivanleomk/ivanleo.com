@@ -1,0 +1,249 @@
+---
+title: From Javascript to Python
+date: 2024-03-03
+categories:
+  - Python
+  - Clean Code
+description: A Javascript developer learns to write more python
+---
+ As I've spent more time writing python scripts, I've realised that it's easy to write bad code in python. A lot of good practices often look different than what I initially had in mind. I've worked on mostly Javascript frontend codebases and working with more class-based objects has been a bit of a learning curve.
+
+I've been lucky enough to have Jason (@jxnlco on twitter) review a good chunk of my code and I've found that these few things have made a massive difference in my code quality.
+
+- using the `@classmethod` decorator
+- taking time to learn about common libraries
+- writing simpler functions
+- being a bit lazier
+
+I'm still far from an expert but I hope these tips help you to avoid many of the mistakes that I made when starting out with Python.
+
+## use the `@classmethod` decorator
+
+I think more people should be thinking about classmethods and using the `@classmethod` decorator. They make your code a lot easier to mantain and reduce a chance of some complex initialisation logic backfiring on you.
+
+Pandas has a lot of different classmethods in the codebase.
+
+- Using a csv file ? - `pandas.read_csv(csv_file)`
+- Using a pickled object ? - `pandas.read_pickle(pickle_file_path)`
+- Using a excel file? - `pandas.read_excel(file_path)`
+
+Without a classmethod, we'd have to check the file type, then see if we've got all of the necessary information to read in the file. We'd then have to make sure this logic doesn't overlap with the other files we'd like to support. With a classmethod, I don't need to deal with complex edge cases since each classmethod supports just one use-case - reading in its specific file type.
+
+I recently worked on writing a script that generated embeddings using different models using SentenceTransformers, OpenAI and Cohere. This was tricky because each of these models need to be used differently, even when initialising them and I finally settled on the code below.
+
+````python
+class Provider(enum.Enum):
+    HUGGINGFACE = "HuggingFace"
+    OPENAI = "OpenAI"
+    COHERE = "Cohere"
+    
+class EmbeddingModel:
+    def __init__(
+        self,
+        model_name: str,
+        provider: Provider,
+        max_limit: int = 20,
+        expected_iterations: int = float("inf"),
+    ):
+      self.model_name = model_name
+      self.provider=provider
+
+    @classmethod
+    def from_hf(cls, model_name: str):
+        return cls(
+            model_name,
+            provider=Provider.HUGGINGFACE,
+            max_limit=float("inf"),
+        )
+
+    @classmethod
+    def from_openai(cls, model_name: str, max_limit=20):
+        return cls(model_name, provider=Provider.OPENAI, max_limit=max_limit)
+
+    @classmethod
+    def from_cohere(cls, model_name: str):
+        return cls(model_name, provider=Provider.COHERE)
+````
+
+There are a few things which make the code above good
+
+1. **Easier To Read**: I can determine which provider I'm using when I instantiate the class - `EmbeddingModel.from_hf` makes it clear that it's the `SentenceTransformers` package that's being used
+
+2. **Lesser Redundancy**:  I only need to pass in the values that I need to for each specific model. This makes it easy to add in additional configuration parameters down the line and be confident that it won't mess up existing functionality
+
+
+
+## Learn Common Libraries
+
+This might be overstated but I think everyone should take some time to at least read through the basic functions in commonly used libraries. Some general parallels I've found have been
+
+- Handling Data -> Pandas
+- Retrying/Exception Handling -> Tenacity
+- Caching data -> diskcache
+- Validating Objects -> Pydantic 
+
+If a commonly used libarary provides some functionality, you should use it. It's rarely going to be beneficial to spend hours writing your own version unless it's for educational purposes. The simple but effective hack I've found has been to use a variant of the following prompt.
+
+```bash
+I want to do <task>. How can I do so with <commonly used library>. 
+```
+
+ChatGPT has a nasty habbit of trying to roll its own implementation of everything. I made this mistake recently as usual when I had to log the results of an experiment I did.  ChatGPT suggested I use the `csv` module, manually calculate a set of all of the keys in my data before writing it to a `.csv` file as seen below.
+
+```python
+import csv
+
+# This is a bad example 
+data = [{"key1": 2, "key4": 10}, {"key3": 3}, {"key4": 4}]
+
+keys = set()
+for obj in data:
+    keys.update(obj.keys())
+
+with open("output.csv", "w", newline="") as csvfile:
+    writer = csv.DictWriter(csvfile, fieldnames=keys)
+    writer.writeheader()
+    writer.writerows(data)
+```
+
+After spending 30 minutes testing and fixing some bugs with this version, I discovered to my dismay that Pandas had the native `to_csv` classmethod to write to csv and that I could generate a Dataframe from a list of objects as seen below.
+
+```python
+import pandas as pd
+
+data = [{"key1": 2, "key4": 10}, {"key3": 3}, {"key4": 4}]
+df = pd.DataFrame(data)
+df.to_csv("output.csv", index=False)
+```
+
+That's a huge reduction in the potential issues with my code because I'm now using a library method that other people have spent time and effort to write and test. Additionally, using a common library helps you catch edge cases that you might otherwise miss in your hand-rolled implementation.
+
+## Write Simpler Functions
+
+It's pretty easy to write bad functions. In my case, it happens when I try to squeeze everything into a single function or mutate variables shared between different functions. This causes a lot of problems when trying to test the code and for others trying to understand what my code does. 
+
+I had a pretty complex problem to solve recently with some code - which was to take in a dataset of rows with some text and then embed every sentence inside it. I took some time and wrote an initial draft that looked something like this
+
+``` python
+def get_dataset_batches(data,dataset_mapping:dict[str,int],batch_size=100):
+  """
+  In this case, dataset_mapping maps a sentence to a 
+  id that we can use to identify it by. This is an 
+  empty dictionary by default
+  """
+  batch = []
+  for row in data:
+    s1,s2 = data["text"]
+    if s1 not in dataset_mapping:
+      dataset_mapping[s1] = len(dataset_mapping)
+      batch.append(s1)
+      if len(batch) == batch_size:
+        yield batch
+        batch = []
+    
+    if s2 not in dataset_mapping:
+      dataset_mapping[s2] = len(dataset_mapping)
+			batch.append(s1)
+      if len(batch) == batch_size:
+        yield batch
+        batch = []
+    
+  if batch:
+    yield batch
+```
+
+Instead of doing this, a better method might be to break up our function into the following few smaller functions as seen below.
+
+```python
+def get_unique_sentences(data):
+  seen = set()
+  for row in data:
+    s1,s2 = data["text"]
+    if s1 not in seen:
+      seen.add(s1)
+      yield s1
+     
+    if s2 not in seen:
+      seen.add(s1)
+      yield s2
+      
+def get_sentence_to_id_mapping(sentences:List[str]):
+  mapping = {}
+  for sentence in sentences:
+    mapping[sentence] = len(mapping)
+  return mapping
+
+def generate_sentence_batches(sentence_mapping:dict[str,int],batch_size=100):
+  batch = []
+	for sentence in sentence_mapping:  
+    batch.append([sentence,sentence_mapping[sentence]])
+    if len(batch) == batch_size:
+      yield batch
+    	batch = []
+   
+  if batch:
+    yield batch
+```
+
+We can then call the function above using a main function like 
+
+```python
+def main(data):
+  sentences = get_unique_sentences(data)
+  s2id = get_sentence_to_id_mapping(sentences)
+  batches = generate_sentence_batches(s2id)
+  return batches
+```
+
+In the second case we're not squeezing everything into a single function. It's clear exactly what is happening in each function which makes it easy for people to understand your code. 
+
+Additionally, because we don't mutate state in between our functions and instead generate a new value, we are able to mock and test each of these functions individually, allowing for more stable code to be written in the long run. 
+
+It helps to have one main function call a sequence of other functions and have those functions be as flat as possible. This means that ideally between each of these calls, we minimise mutation or usage of some shared variable and only do so when there's an expensive piece of computation involved.
+
+## Being a bit lazier
+
+it's actually not a bad thing to use a slightly less abstract solution sometimes. For instance, when I implement functions, I tend to prefer returning simple dictionaries if the response object isn't being shared between different functions.
+
+```python
+def extract_attributes(data):
+  # Do some processing
+	new_data = process_data(data)
+  return {
+		"key1": new_data["key1"],
+    "key2": new_data["key2"]
+  }
+
+def main():
+  data = pd.read_csv("data.csv")
+  attributes = extract_attributes(data)
+  return attributes
+```
+
+In this example, there's a limited utility to declaring an entire dataclass because it adds additional overhead and complexity to the function. 
+
+```python
+@dataclass
+class Attributes:
+  key1: List[int]
+  key2: List[int]
+
+def extract_attributes(data):
+  new_data = process_data(data)
+  return Attributes(
+		key1 = new_data["key1"],
+        key2 = new_data["key2"]
+  )
+
+def main():
+  data = pd.read_csv("data.csv")
+  attributes = extract_attributes(data)
+  return attributes
+```
+
+I have found it to be more useful instead to use a dataclass when something is being shared between multiple different areas and we want to make sure we're passing a validated value with known properties ( in fact perhaps utilise `Pydantic` here ). Most importantly, it's ok to have code that isn't completely abstract if it makes it easier for other people to understand your code. 
+
+# Conclusion
+
+Everyone needs to write enough bad code to start writing better code. The path to writing better code is paved with a lot of PR reviews and reading better code examples. I've definitely written my share of bad code and I hope that this article helps you to see some interesting ways to write better code. 
+
