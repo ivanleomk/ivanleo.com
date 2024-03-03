@@ -229,11 +229,10 @@ class Attributes:
   key2: List[int]
 
 def extract_attributes(data):
-  # Do some processing
-	new_data = process_data(data)
+  new_data = process_data(data)
   return Attributes(
 		key1 = new_data["key1"],
-    key2 = new_data["key2"]
+        key2 = new_data["key2"]
   )
 
 def main():
